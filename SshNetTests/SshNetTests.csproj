@@ -1,0 +1,56 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFrameworks>net45;netcoreapp2.1;netcoreapp3.1</TargetFrameworks>
+    <AutoGenerateBindingRedirects>false</AutoGenerateBindingRedirects>
+	<IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp2.1' or '$(TargetFramework)' == 'netcoreapp3.1' ">
+    <DefineConstants>TRACE;FEATURE_MSTEST_DATATEST;FEATURE_SOCKET_EAP;FEATURE_ENCODING_ASCII;FEATURE_THREAD_SLEEP;FEATURE_THREAD_THREADPOOL</DefineConstants>
+  </PropertyGroup>
+
+<PropertyGroup Condition=" '$(TargetFramework)' == 'net40' ">
+    <DefineConstants>TRACE;FEATURE_SOCKET_EAP;FEATURE_ENCODING_ASCII;FEATURE_THREAD_SLEEP;FEATURE_THREAD_THREADPOOL</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="packages\**" />
+    <Compile Remove="TestResults\**" />
+    <EmbeddedResource Remove="packages\**" />
+    <EmbeddedResource Remove="TestResults\**" />
+    <None Remove="packages\**" />
+    <None Remove="TestResults\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.1.0" />	  
+    <PackageReference Include="MSTest.TestAdapter" Version="2.1.0" />
+    <PackageReference Include="MSTest.TestFramework" Version="2.1.0" />
+    <PackageReference Include="SSH.NET" Version="2020.0.1" />
+    <PackageReference Include="System.Management" Version="4.7.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net40' or '$(TargetFramework)' == 'net45' ">
+    <PackageReference Include="Tamir.SharpSSH" Version="1.1.1.13" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\SSH.NET-TestTools\src\SshNet.TestTools.OpenSSH\SshNet.TestTools.OpenSSH.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="resources\client\id_dsa" />
+    <EmbeddedResource Include="resources\client\id_dsa.ppk" />
+    <EmbeddedResource Include="resources\client\id_noaccess.rsa" />
+    <EmbeddedResource Include="resources\client\id_rsa" />
+    <EmbeddedResource Include="resources\client\key_ecdsa_256_openssh" />
+    <EmbeddedResource Include="resources\client\key_ecdsa_384_openssh" />
+    <EmbeddedResource Include="resources\client\key_ecdsa_521_openssh" />
+    <EmbeddedResource Include="resources\issue #70.png" />
+    <EmbeddedResource Include="resources\server\ssh_host_ecdsa_key_openssh" />
+    <EmbeddedResource Include="resources\server\ssh_host_ed25519_key_openssh" />
+    <EmbeddedResource Include="resources\server\ssh_host_rsa_key_openssh" />
+  </ItemGroup>
+</Project>

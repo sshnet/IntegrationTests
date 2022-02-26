@@ -1,0 +1,15 @@
+# Visual Studio build output
+**/bin/**
+**/obj/**
+
+# Visual Studio project user settings
+**/*.csproj.user
+
+# MSTest test Results
+SShNetTests/TestResults/
+
+# NuGet packages
+packages/
+
+# Visual Studio 2015 cache/options directory 
+**/.vs/**
