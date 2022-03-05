@@ -37,7 +37,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\SSH.NET-TestTools\src\SshNet.TestTools.OpenSSH\SshNet.TestTools.OpenSSH.csproj" />
+    <ProjectReference Include="..\..\..\SSH.NET-TestTools\src\SshNet.TestTools.OpenSSH\SshNet.TestTools.OpenSSH.csproj" />
   </ItemGroup>
 
   <ItemGroup>
