@@ -28,25 +28,19 @@ namespace SshNetTests
             {
                 client.Connect();
 
-                var stopCommand = client.CreateCommand("sudo systemctl stop ssh");
+                // Kill all processes that start with 'sshd' and that run as root
+                var stopCommand = client.CreateCommand("sudo pkill -9 -U 0 sshd");
                 var stopOutput = stopCommand.Execute();
                 if (stopCommand.ExitStatus != 0)
                 {
                     throw new ApplicationException($"Stopping ssh service failed with exit code {stopCommand.ExitStatus}.\r\n{stopOutput}");
                 }
 
-                var resetFailedCommand = client.CreateCommand("sudo systemctl reset-failed ssh");
+                var resetFailedCommand = client.CreateCommand("sudo /usr/sbin/sshd");
                 var resetFailedOutput = resetFailedCommand.Execute();
                 if (resetFailedCommand.ExitStatus != 0)
                 {
                     throw new ApplicationException($"Reset failures for ssh service failed with exit code {resetFailedCommand.ExitStatus}.\r\n{resetFailedOutput}");
-                }
-
-                var startCommand = client.CreateCommand("sudo systemctl start ssh");
-                var startOutput = startCommand.Execute();
-                if (startCommand.ExitStatus != 0)
-                {
-                    throw new ApplicationException($"Starting ssh service failed with exit code {startCommand.ExitStatus}.\r\n{startOutput}");
                 }
             }
 
@@ -123,6 +117,18 @@ namespace SshNetTests
         public RemoteSshdConfig AddKeyExchangeAlgorithm(KeyExchangeAlgorithm keyExchangeAlgorithm)
         {
             _config.KeyExchangeAlgorithms.Add(keyExchangeAlgorithm);
+            return this;
+        }
+
+        public RemoteSshdConfig ClearPublicKeyAcceptedAlgorithms()
+        {
+            _config.PublicKeyAcceptedAlgorithms.Clear();
+            return this;
+        }
+
+        public RemoteSshdConfig AddPublicKeyAcceptedAlgorithms(PublicKeyAlgorithm publicKeyAlgorithm)
+        {
+            _config.PublicKeyAcceptedAlgorithms.Add(publicKeyAlgorithm);
             return this;
         }
 

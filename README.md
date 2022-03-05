@@ -1,18 +1,14 @@
 
-# One-time setup
+# How to run tests
 
-## Admin account
+Use the following procedure to run the **SSH.NET** integration tests:
 
-Create an account that will be used for admin tasks (eg. stopping sshd).
-This account should be member of the following groups:
-* adm
-* sudo
+* Build the docker image in /docker.
+  On Windows, you can execute the 'build.cmd' script from /docker.
 
-This account be allowed to use to sudo to run any command without password prompt.
-For this the */etc/sudoers* file should contain the following:
+* Run the docker container that we just built.
+  On Windows, you can execute the 'run.cmd' script from /docker.
 
-<account> ALL=(ALL) NOPASSWD: ALL
+* Build the Visual Studio solution.
 
-## Regular account
-
-TODO: Automate creation and configuration of this account?
+* Run the tests in Visual Studion.

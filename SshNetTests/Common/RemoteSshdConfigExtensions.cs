@@ -10,7 +10,7 @@ namespace SshNetTests.Common
         {
             remoteSshdConfig.WithAuthenticationMethods(Users.Regular.UserName, DefaultAuthenticationMethods)
                             .WithChallengeResponseAuthentication(false)
-                            .WithLogLevel(LogLevel.Info)
+                            .WithLogLevel(LogLevel.Debug3)
                             .ClearHostKeyFiles()
                             .AddHostKeyFile(HostKeyFile.Rsa.FilePath)
                             .ClearSubsystems()
@@ -18,6 +18,9 @@ namespace SshNetTests.Common
                             .ClearCiphers()
                             .ClearKeyExchangeAlgorithms()
                             .ClearHostKeyAlgorithms()
+                            .AddHostKeyAlgorithm(HostKeyAlgorithm.SshRsa)
+                            .ClearPublicKeyAcceptedAlgorithms()
+                            .AddPublicKeyAcceptedAlgorithms(PublicKeyAlgorithm.SshRsa)
                             .WithUsePAM(true)
                             .Update()
                             .Restart();
