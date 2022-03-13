@@ -40,11 +40,8 @@ namespace SshNetTests
 
         protected static string CreateHash(byte[] buffer)
         {
-            using (var ms = new MemoryStream())
+            using (var ms = new MemoryStream(buffer))
             {
-                ms.Write(buffer, 0, buffer.Length);
-                ms.Position = 0;
-
                 return CreateHash(ms);
             }
         }
