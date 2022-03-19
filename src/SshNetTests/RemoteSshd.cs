@@ -29,14 +29,14 @@ namespace SshNetTests
                 client.Connect();
 
                 // Kill all processes that start with 'sshd' and that run as root
-                var stopCommand = client.CreateCommand("sudo pkill -9 -U 0 sshd");
+                var stopCommand = client.CreateCommand("sudo pkill -9 -U 0 sshd.pam");
                 var stopOutput = stopCommand.Execute();
                 if (stopCommand.ExitStatus != 0)
                 {
                     throw new ApplicationException($"Stopping ssh service failed with exit code {stopCommand.ExitStatus}.\r\n{stopOutput}");
                 }
 
-                var resetFailedCommand = client.CreateCommand("sudo /usr/sbin/sshd");
+                var resetFailedCommand = client.CreateCommand("sudo /usr/sbin/sshd.pam");
                 var resetFailedOutput = resetFailedCommand.Execute();
                 if (resetFailedCommand.ExitStatus != 0)
                 {
@@ -76,9 +76,29 @@ namespace SshNetTests
             }
         }
 
-        public RemoteSshdConfig WithChallengeResponseAuthentication(bool value)
+        /// <summary>
+        /// Specifies whether challenge-response authentication is allowed.
+        /// </summary>
+        /// <param name="value"><see langword="true"/> to allow challenge-response authentication.</param>
+        /// <returns>
+        /// The current <see cref="RemoteSshdConfig"/> instance.
+        /// </returns>
+        public RemoteSshdConfig WithChallengeResponseAuthentication(bool? value)
         {
             _config.ChallengeResponseAuthentication = value;
+            return this;
+        }
+
+        /// <summary>
+        /// Specifies whether to allow keyboard-interactive authentication.
+        /// </summary>
+        /// <param name="value"><see langword="true"/> to allow keyboard-interactive authentication.</param>
+        /// <returns>
+        /// The current <see cref="RemoteSshdConfig"/> instance.
+        /// </returns>
+        public RemoteSshdConfig WithKeyboardInteractiveAuthentication(bool value)
+        {
+            _config.KeyboardInteractiveAuthentication = value;
             return this;
         }
 
@@ -164,7 +184,7 @@ namespace SshNetTests
 
         public RemoteSshdConfig WithUsePAM(bool usePAM)
         {
-            _config.UsePAM = true;
+            _config.UsePAM = usePAM;
             return this;
         }
 
