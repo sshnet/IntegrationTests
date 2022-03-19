@@ -26,9 +26,23 @@ namespace SshNetTests
         [TestCleanup]
         public void TearDown()
         {
-            if (_remoteSshdConfig != null)
+            _remoteSshdConfig?.Reset();
+
+            using (var client = new SshClient(_adminConnectionInfoFactory.Create()))
             {
-                _remoteSshdConfig.Reset();
+                client.Connect();
+
+                // Reset the password back to the "regular" password.
+                using (var cmd = client.RunCommand($"echo \"{Users.Regular.Password}\n{Users.Regular.Password}\" | sudo passwd " + Users.Regular.UserName))
+                {
+                    Assert.AreEqual(0, cmd.ExitStatus, cmd.Error);
+                }
+
+                // Remove password expiration
+                using (var cmd = client.RunCommand($"sudo chage --expiredate -1 " + Users.Regular.UserName))
+                {
+                    Assert.AreEqual(0, cmd.ExitStatus, cmd.Error);
+                }
             }
         }
 
@@ -37,6 +51,7 @@ namespace SshNetTests
         {
             _remoteSshdConfig.WithAuthenticationMethods(Users.Regular.UserName, "keyboard-interactive,publickey")
                              .WithChallengeResponseAuthentication(true)
+                             .WithKeyboardInteractiveAuthentication(true)
                              .Update()
                              .Restart();
 
@@ -95,7 +110,6 @@ namespace SshNetTests
         public void Multifactor_Password_Or_PublicKeyAndKeyboardInteractive()
         {
             _remoteSshdConfig.WithAuthenticationMethods(Users.Regular.UserName, "password publickey,keyboard-interactive")
-                             .WithChallengeResponseAuthentication(false)
                              .Update()
                              .Restart();
 
@@ -111,7 +125,6 @@ namespace SshNetTests
         public void Multifactor_Password_Or_PublicKeyAndPassword_BadPassword()
         {
             _remoteSshdConfig.WithAuthenticationMethods(Users.Regular.UserName, "password publickey,password")
-                             .WithChallengeResponseAuthentication(false)
                              .Update()
                              .Restart();
 
@@ -136,7 +149,6 @@ namespace SshNetTests
         public void Multifactor_PasswordAndPublicKey_Or_PasswordAndPassword()
         {
             _remoteSshdConfig.WithAuthenticationMethods(Users.Regular.UserName, "password,publickey password,password")
-                             .WithChallengeResponseAuthentication(false)
                              .Update()
                              .Restart();
 
@@ -169,7 +181,6 @@ namespace SshNetTests
         public void Multifactor_PasswordAndPassword_Or_PublicKey()
         {
             _remoteSshdConfig.WithAuthenticationMethods(Users.Regular.UserName, "password,password publickey")
-                             .WithChallengeResponseAuthentication(false)
                              .Update()
                              .Restart();
 
@@ -192,7 +203,6 @@ namespace SshNetTests
         public void Multifactor_Password_Or_Password()
         {
             _remoteSshdConfig.WithAuthenticationMethods(Users.Regular.UserName, "password password")
-                             .WithChallengeResponseAuthentication(false)
                              .Update()
                              .Restart();
 
@@ -219,7 +229,7 @@ namespace SshNetTests
             {
                 client.Connect();
 
-                // Temporarity modify password so that when a expire this password, we change reset the password back to
+                // Temporarity modify password so that when we expire this password, we change reset the password back to
                 // the "regular" password.
                 using (var cmd = client.RunCommand($"echo \"{temporaryPassword}\n{temporaryPassword}\" | sudo passwd " + Users.Regular.UserName))
                 {
@@ -227,7 +237,7 @@ namespace SshNetTests
                 }
 
                 // Force the password to expire immediately
-                using (var cmd = client.RunCommand($"sudo passwd --expire " + Users.Regular.UserName))
+                using (var cmd = client.RunCommand($"sudo chage -d 0 " + Users.Regular.UserName))
                 {
                     Assert.AreEqual(0, cmd.ExitStatus, cmd.Error);
                 }
@@ -235,6 +245,7 @@ namespace SshNetTests
 
             _remoteSshdConfig.WithAuthenticationMethods(Users.Regular.UserName, "keyboard-interactive")
                              .WithChallengeResponseAuthentication(true)
+                             .WithKeyboardInteractiveAuthentication(true)
                              .Update()
                              .Restart();
 
@@ -273,14 +284,6 @@ namespace SshNetTests
             {
                 client.Connect();
                 Assert.AreEqual(4, authenticationPromptCount);
-            }
-
-            _remoteSshdConfig.Reset();
-
-            connectionInfo = _connectionInfoFactory.Create(_authenticationMethodFactory.CreateRegulatUserPasswordAuthenticationMethod());
-            using (var client = new SftpClient(connectionInfo))
-            {
-                client.Connect();
             }
         }
     }
