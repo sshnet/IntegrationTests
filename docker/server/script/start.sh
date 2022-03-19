@@ -1,4 +1,5 @@
 #!/bin/ash
 /usr/sbin/syslog-ng
-/usr/sbin/sshd
+# start PAM-enabled ssh daemon as we also want keyboard-interactive authentication to work
+/usr/sbin/sshd.pam
 tail -f < /var/log/auth.log

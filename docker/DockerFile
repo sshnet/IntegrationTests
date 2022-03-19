@@ -7,6 +7,8 @@ COPY --chown=sshnet:sshnet user/sshnet /home/sshnet/.ssh
 RUN apk add --no-cache syslog-ng && \
     # install and configure sshd
     apk add --no-cache openssh && \
+    # install openssh-server-pam to allow for keyboard-interactive authentication
+    apk add --no-cache openssh-server-pam && \
     chmod 400 /etc/ssh/ssh*key && \
     sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config && \
     sed -i 's/#LogLevel\s*INFO/LogLevel DEBUG3/' /etc/ssh/sshd_config && \
@@ -29,7 +31,9 @@ RUN apk add --no-cache syslog-ng && \
     passwd -u sshnetadm && \
     echo 'sshnetadm:ssh4ever' | chpasswd && \
     addgroup sshnetadm sudo && \
-    dos2unix /opt/sshnet/*
+    dos2unix /opt/sshnet/* && \
+    # install shadow package; we use chage command in this package to expire/unexpire password of the sshnet user
+    apk add --no-cache shadow
 
 EXPOSE 22 22
 
