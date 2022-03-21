@@ -52,6 +52,7 @@ namespace SshNetTests
             _remoteSshdConfig.WithAuthenticationMethods(Users.Regular.UserName, "keyboard-interactive,publickey")
                              .WithChallengeResponseAuthentication(true)
                              .WithKeyboardInteractiveAuthentication(true)
+                             .WithUsePAM(true)
                              .Update()
                              .Restart();
 
@@ -110,6 +111,9 @@ namespace SshNetTests
         public void Multifactor_Password_Or_PublicKeyAndKeyboardInteractive()
         {
             _remoteSshdConfig.WithAuthenticationMethods(Users.Regular.UserName, "password publickey,keyboard-interactive")
+                             .WithChallengeResponseAuthentication(true)
+                             .WithKeyboardInteractiveAuthentication(true)
+                             .WithUsePAM(true)
                              .Update()
                              .Restart();
 
@@ -246,6 +250,7 @@ namespace SshNetTests
             _remoteSshdConfig.WithAuthenticationMethods(Users.Regular.UserName, "keyboard-interactive")
                              .WithChallengeResponseAuthentication(true)
                              .WithKeyboardInteractiveAuthentication(true)
+                             .WithUsePAM(true)
                              .Update()
                              .Restart();
 
