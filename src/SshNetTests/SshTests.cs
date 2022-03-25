@@ -63,7 +63,7 @@ namespace SshNetTests
                         shellStream.ReadLine();
                         Assert.Fail();
                     }
-                    catch (NullReferenceException ex)
+                    catch (NullReferenceException)
                     {
 
                     }
