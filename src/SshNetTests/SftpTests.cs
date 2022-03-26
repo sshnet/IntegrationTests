@@ -4846,8 +4846,220 @@ namespace SshNetTests
             }
         }
 
+
+
         [TestMethod]
-        public void Sftp_Open_Create_Write_ExistingFile()
+        public void Sftp_Open_PathAndMode_ModeIsCreate_FileDoesNotExist()
+        {
+            const string remoteFile = "/home/sshnet/test";
+
+            using (var client = new SftpClient(_connectionInfoFactory.Create()))
+            {
+                client.Connect();
+
+                if (client.Exists(remoteFile))
+                {
+                    client.DeleteFile(remoteFile);
+                }
+
+                try
+                {
+                    #region Verify if merely opening the file for create creates a zero-byte file
+
+                    using (client.Open(remoteFile, FileMode.Create))
+                    {
+                    }
+
+                    Assert.IsTrue(client.Exists(remoteFile));
+
+                    var attributes = client.GetAttributes(remoteFile);
+                    Assert.IsTrue(attributes.IsRegularFile);
+                    Assert.AreEqual(0L, attributes.Size);
+
+                    #endregion Verify if merely opening the file for create creates a zero-byte file
+
+                    client.DeleteFile(remoteFile);
+
+                    #region Verify if content is actually written to the file
+
+                    var content = GenerateRandom(100);
+
+                    using (var s = client.Open(remoteFile, FileMode.Create))
+                    {
+                        s.Write(content, 0, content.Length);
+                    }
+
+                    using (var downloaded = new MemoryStream())
+                    {
+                        client.DownloadFile(remoteFile, downloaded);
+                        downloaded.Position = 0;
+                        Assert.AreEqual(CreateHash(content), CreateHash(downloaded));
+                    }
+
+                    #endregion Verify if content is actually written to the file
+                }
+                finally
+                {
+                    if (client.Exists(remoteFile))
+                    {
+                        client.DeleteFile(remoteFile);
+                    }
+                }
+            }
+        }
+
+        [TestMethod]
+        public void Sftp_Open_PathAndMode_ModeIsCreate_ExistingFile()
+        {
+            const string remoteFile = "/home/sshnet/test";
+            const int fileSize = 5 * 1024;
+            var newContent = new byte[] { 0x07, 0x03, 0x02, 0x0b };
+
+            using (var client = new SftpClient(_connectionInfoFactory.Create()))
+            using (var input = CreateMemoryStream(fileSize))
+            {
+                client.Connect();
+
+                if (client.Exists(remoteFile))
+                {
+                    client.DeleteFile(remoteFile);
+                }
+
+                try
+                {
+                    input.Position = 0;
+                    client.UploadFile(input, remoteFile);
+
+                    using (var stream = client.Open(remoteFile, FileMode.Create))
+                    {
+                        // Verify if merely opening the file for create overwrites the file
+                        var attributes = client.GetAttributes(remoteFile);
+                        Assert.IsTrue(attributes.IsRegularFile);
+                        Assert.AreEqual(0L, attributes.Size);
+
+                        stream.Write(newContent, 0, newContent.Length);
+                        stream.Position = 0;
+
+                        Assert.AreEqual(CreateHash(newContent), CreateHash(stream));
+                    }
+                }
+                finally
+                {
+                    if (client.Exists(remoteFile))
+                    {
+                        client.DeleteFile(remoteFile);
+                    }
+                }
+            }
+        }
+
+        [TestMethod]
+        public void Sftp_Open_PathAndModeAndAccess_ModeIsCreate_AccessIsReadWrite_FileDoesNotExist()
+        {
+            const string remoteFile = "/home/sshnet/test";
+
+            using (var client = new SftpClient(_connectionInfoFactory.Create()))
+            {
+                client.Connect();
+
+                if (client.Exists(remoteFile))
+                {
+                    client.DeleteFile(remoteFile);
+                }
+
+                try
+                {
+                    #region Verify if merely opening the file for create creates a zero-byte file
+
+                    using (client.Open(remoteFile, FileMode.Create, FileAccess.ReadWrite))
+                    {
+                    }
+
+                    Assert.IsTrue(client.Exists(remoteFile));
+
+                    var attributes = client.GetAttributes(remoteFile);
+                    Assert.IsTrue(attributes.IsRegularFile);
+                    Assert.AreEqual(0L, attributes.Size);
+
+                    #endregion Verify if merely opening the file for create creates a zero-byte file
+
+                    client.DeleteFile(remoteFile);
+
+                    #region Verify if content is actually written to the file
+
+                    var content = GenerateRandom(100);
+
+                    using (var s = client.Open(remoteFile, FileMode.Create, FileAccess.ReadWrite))
+                    {
+                        s.Write(content, 0, content.Length);
+                    }
+
+                    using (var downloaded = new MemoryStream())
+                    {
+                        client.DownloadFile(remoteFile, downloaded);
+                        downloaded.Position = 0;
+                        Assert.AreEqual(CreateHash(content), CreateHash(downloaded));
+                    }
+
+                    #endregion Verify if content is actually written to the file
+                }
+                finally
+                {
+                    if (client.Exists(remoteFile))
+                    {
+                        client.DeleteFile(remoteFile);
+                    }
+                }
+            }
+        }
+
+        [TestMethod]
+        public void Sftp_Open_PathAndModeAndAccess_ModeIsCreate_AccessIsReadWrite_ExistingFile()
+        {
+            const string remoteFile = "/home/sshnet/test";
+            const int fileSize = 5 * 1024;
+            var newContent = new byte[] { 0x07, 0x03, 0x02, 0x0b };
+
+            using (var client = new SftpClient(_connectionInfoFactory.Create()))
+            using (var input = CreateMemoryStream(fileSize))
+            {
+                client.Connect();
+
+                if (client.Exists(remoteFile))
+                {
+                    client.DeleteFile(remoteFile);
+                }
+
+                try
+                {
+                    input.Position = 0;
+                    client.UploadFile(input, remoteFile);
+
+                    using (var stream = client.Open(remoteFile, FileMode.Create, FileAccess.ReadWrite))
+                    {
+                        // Verify if merely opening the file for create overwrites the file
+                        var attributes = client.GetAttributes(remoteFile);
+                        Assert.IsTrue(attributes.IsRegularFile);
+                        Assert.AreEqual(0L, attributes.Size);
+
+                        stream.Write(newContent, 0, newContent.Length);
+                        stream.Position = 0;
+
+                        Assert.AreEqual(CreateHash(newContent), CreateHash(stream));
+                    }
+                }
+                finally
+                {
+                    if (client.Exists(remoteFile))
+                    {
+                        client.DeleteFile(remoteFile);
+                    }
+                }
+            }
+        }
+
+        [TestMethod]
+        public void Sftp_Open_PathAndModeAndAccess_ModeIsCreate_AccessIsWrite_ExistingFile()
         {
             const string remoteFile = "/home/sshnet/test";
 
@@ -4893,7 +5105,7 @@ namespace SshNetTests
         }
 
         [TestMethod]
-        public void Sftp_Open_Create_Write_FileDoesNotExist()
+        public void Sftp_Open_PathAndModeAndAccess_ModeIsCreate_AccessIsWrite_FileDoesNotExist()
         {
             const string remoteFile = "/home/sshnet/test";
 
