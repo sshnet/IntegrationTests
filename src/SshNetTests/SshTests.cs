@@ -1,6 +1,8 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Renci.SshNet;
+using Renci.SshNet.Common;
 using Renci.SshNet.Tests.Common;
+using SshNetTests.Common;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -17,12 +19,25 @@ namespace SshNetTests
     {
         private IConnectionInfoFactory _connectionInfoFactory;
         private IConnectionInfoFactory _adminConnectionInfoFactory;
+        private RemoteSshdConfig _remoteSshdConfig;
 
         [TestInitialize]
         public void SetUp()
         {
             _connectionInfoFactory = new LinuxVMConnectionFactory();
             _adminConnectionInfoFactory = new LinuxAdminConnectionFactory();
+
+            _remoteSshdConfig = new RemoteSshd(_adminConnectionInfoFactory).OpenConfig();
+            _remoteSshdConfig.AllowTcpForwarding()
+                             .PrintMotd(false)
+                             .Update()
+                             .Restart();
+        }
+
+        [TestCleanup]
+        public void TearDown()
+        {
+            _remoteSshdConfig?.Reset();
         }
 
         /// <summary>
@@ -35,8 +50,14 @@ namespace SshNetTests
             {
                 client.Connect();
 
-                using (var shellStream = client.CreateShellStream("xterm", 80, 24, 800, 600, 1024))
+                var terminalModes = new Dictionary<TerminalModes, uint>
+                    {
+                        { TerminalModes.ECHO, 0 }
+                    };
+
+                using (var shellStream = client.CreateShellStream("xterm", 80, 24, 800, 600, 1024, terminalModes))
                 {
+                    shellStream.WriteLine("echo Hello!");
                     shellStream.WriteLine("exit");
 
                     Thread.Sleep(1000);
@@ -55,18 +76,84 @@ namespace SshNetTests
 
                     var line = shellStream.ReadLine();
                     Assert.IsNotNull(line);
-                    Assert.IsTrue(line.Contains("exit"), line);
+                    Assert.IsTrue(line.EndsWith("Hello!"), line);
 
-                    // TODO: ReadLine should immediately return null when the channel has been closed (issue #672)
+                    // TODO: ReadLine should return null when the buffer is empty and the channel has been closed (issue #672)
                     try
                     {
-                        shellStream.ReadLine();
-                        Assert.Fail();
+                        line = shellStream.ReadLine();
+                        Assert.Fail(line);
                     }
                     catch (NullReferenceException)
                     {
 
                     }
+                }
+            }
+        }
+
+        /// <summary>
+        /// https://github.com/sshnet/SSH.NET/issues/63
+        /// </summary>
+        [TestMethod]
+        public void Ssh_ShellStream_IntermittendOutput()
+        {
+            const string remoteFile = "/home/sshnet/test.sh";
+
+            var expectedResult = string.Join("\n",
+                                             "Line 1 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                                             "Line 2 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                                             "Line 3 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                                             "Line 4 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                                             "Line 5 ",
+                                             "Line 6");
+
+            var scriptBuilder = new StringBuilder();
+            scriptBuilder.Append("#!/bin/sh\n");
+            scriptBuilder.Append("echo Line 1 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n");
+            scriptBuilder.Append("sleep .5\n");
+            scriptBuilder.Append("echo Line 2 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n");
+            scriptBuilder.Append("echo Line 3 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n");
+            scriptBuilder.Append("echo Line 4 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n");
+            scriptBuilder.Append("sleep 2\n");
+            scriptBuilder.Append("echo \"Line 5 \"\n");
+            scriptBuilder.Append("echo Line 6 \n");
+            scriptBuilder.Append("exit 13\n");
+
+            using (var sshClient = new SshClient(_connectionInfoFactory.Create()))
+            {
+                sshClient.Connect();
+
+                CreateShellScript(_connectionInfoFactory, remoteFile, scriptBuilder.ToString());
+
+                try
+                {
+                    var terminalModes = new Dictionary<TerminalModes, uint>
+                    {
+                        { TerminalModes.ECHO, 0 }
+                    };
+
+                    using (var shellStream = sshClient.CreateShellStream("xterm", 80, 24, 800, 600, 1024, terminalModes))
+                    {
+                        shellStream.WriteLine(remoteFile);
+
+                        using (var reader = new StreamReader(shellStream, new UTF8Encoding(false), false, 10))
+                        {
+                            var lines = new List<string>();
+                            string line = null;
+                            while ((line = reader.ReadLine()) != null)
+                            {
+                                lines.Add(line);
+                            }
+
+                            Assert.AreEqual(6, lines.Count, string.Join("\n", lines));
+                            Assert.AreEqual(expectedResult, string.Join("\n", lines));
+                        }
+                    }
+                }
+                finally
+                {
+                    RemoveFileOrDirectory(sshClient, remoteFile);
                 }
             }
         }
@@ -176,8 +263,7 @@ namespace SshNetTests
                                              "Line 3 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
                                              "Line 4 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
                                              "Line 5 ",
-                                             "Line 6",
-                                             "");
+                                             "Line 6");
 
             var scriptBuilder = new StringBuilder();
             scriptBuilder.Append("#!/bin/sh\n");
@@ -241,10 +327,9 @@ namespace SshNetTests
         public void Ssh_DynamicPortForwarding_DisposeSshClientWithoutStoppingPort()
         {
             const string searchText = "HTTP/1.1 301 Moved Permanently";
-            const string hostName = "www.amazon.com";
+            const string hostName = "github.com";
 
-            var httpGetRequest = Encoding.ASCII.GetBytes($"GET /null HTTP/1.1\r\nHost: {hostName}\r\n\r\n");
-            var httpResponseBuffer = new byte[2048];
+            var httpGetRequest = Encoding.ASCII.GetBytes($"GET / HTTP/1.1\r\nHost: {hostName}\r\n\r\n");
             Socket socksSocket;
 
             using (var client = new SshClient(_connectionInfoFactory.Create()))
@@ -253,7 +338,7 @@ namespace SshNetTests
                 client.Connect();
 
                 var forwardedPort = new ForwardedPortDynamic(1080);
-                forwardedPort.Exception += (sender, args) => Console.WriteLine("BROL" + args.Exception.ToString());
+                forwardedPort.Exception += (sender, args) => Console.WriteLine(args.Exception.ToString());
                 client.AddForwardedPort(forwardedPort);
                 forwardedPort.Start();
 
@@ -264,37 +349,28 @@ namespace SshNetTests
                 socksSocket = socksClient.Connect(hostName, 80);
                 socksSocket.Send(httpGetRequest);
 
-                var bytesReceived = socksSocket.Receive(httpResponseBuffer,
-                                                        0,
-                                                        httpResponseBuffer.Length,
-                                                        SocketFlags.None);
-                using (var sr = new StringReader(Encoding.ASCII.GetString(httpResponseBuffer, 0, bytesReceived)))
-                {
-                    var firstLine = sr.ReadLine();
-
-                    Assert.AreEqual(searchText, firstLine);
-                }
+                var httpResponse = GetHttpResponse(socksSocket, Encoding.ASCII);
+                Assert.IsTrue(httpResponse.Contains(searchText), httpResponse);
             }
 
             Assert.IsTrue(socksSocket.Connected);
 
             // check if client socket was properly closed
-            Assert.AreEqual(0, socksSocket.Receive(httpResponseBuffer, 0, httpResponseBuffer.Length, SocketFlags.None));
+            Assert.AreEqual(0, socksSocket.Receive(new byte[1], 0, 1, SocketFlags.None));
         }
 
         [TestMethod]
         public void Ssh_DynamicPortForwarding_DomainName()
         {
             const string searchText = "HTTP/1.1 301 Moved Permanently";
-            const string hostName = "www.amazon.com";
+            const string hostName = "github.com";
 
             // Set-up a host alias for google.be on the remote server that is not known locally; this allows us to
             // verify whether the host name is resolved remotely.
             const string hostNameAlias = "dynamicportforwarding-test.for.sshnet";
 
             // Construct a HTTP request for which we expected the response to contain the search text.
-            var httpGetRequest = Encoding.ASCII.GetBytes($"GET /null HTTP/1.1\r\nHost: {hostName}\r\n\r\n");
-            var httpResponseBuffer = new byte[2048];
+            var httpGetRequest = Encoding.ASCII.GetBytes($"GET / HTTP/1.1\r\nHost: {hostName}\r\n\r\n");
 
             var ipAddresses = Dns.GetHostAddresses(hostName);
             var hostsFileUpdated = AddOrUpdateHostsEntry(_adminConnectionInfoFactory, ipAddresses[0], hostNameAlias);
@@ -317,18 +393,20 @@ namespace SshNetTests
                     var socksSocket = socksClient.Connect(hostNameAlias, 80);
 
                     socksSocket.Send(httpGetRequest);
-                    Assert.IsTrue(SocketResponseContains(socksSocket, httpResponseBuffer, searchText));
+                    var httpResponse = GetHttpResponse(socksSocket, Encoding.ASCII);
+                    Assert.IsTrue(httpResponse.Contains(searchText), httpResponse);
 
                     // Verify if port is still open
                     socksSocket.Send(httpGetRequest);
-                    Assert.IsTrue(SocketResponseContains(socksSocket, httpResponseBuffer, searchText));
+                    httpResponse = GetHttpResponse(socksSocket, Encoding.ASCII);
+                    Assert.IsTrue(httpResponse.Contains(searchText), httpResponse);
 
                     forwardedPort.Stop();
 
                     Assert.IsTrue(socksSocket.Connected);
 
                     // check if client socket was properly closed
-                    Assert.AreEqual(0, socksSocket.Receive(httpResponseBuffer, 0, httpResponseBuffer.Length, SocketFlags.None));
+                    Assert.AreEqual(0, socksSocket.Receive(new byte[1], 0, 1, SocketFlags.None));
 
                     forwardedPort.Start();
 
@@ -336,14 +414,15 @@ namespace SshNetTests
                     socksSocket = socksClient.Connect(hostNameAlias, 80);
 
                     socksSocket.Send(httpGetRequest);
-                    Assert.IsTrue(SocketResponseContains(socksSocket, httpResponseBuffer, searchText));
+                    httpResponse = GetHttpResponse(socksSocket, Encoding.ASCII);
+                    Assert.IsTrue(httpResponse.Contains(searchText), httpResponse);
 
                     forwardedPort.Dispose();
 
                     Assert.IsTrue(socksSocket.Connected);
 
                     // check if client socket was properly closed
-                    Assert.AreEqual(0, socksSocket.Receive(httpResponseBuffer, 0, httpResponseBuffer.Length, SocketFlags.None));
+                    Assert.AreEqual(0, socksSocket.Receive(new byte[1], 0, 1, SocketFlags.None));
 
                     forwardedPort.Dispose();
                 }
@@ -361,7 +440,7 @@ namespace SshNetTests
         public void Ssh_DynamicPortForwarding_IPv4()
         {
             const string searchText = "HTTP/1.1 301 Moved Permanently";
-            const string hostName = "www.amazon.com";
+            const string hostName = "github.com";
 
             var httpGetRequest = Encoding.ASCII.GetBytes($"GET /null HTTP/1.1\r\nHost: {hostName}\r\n\r\n");
             var httpResponseBuffer = new byte[2048];
@@ -385,18 +464,13 @@ namespace SshNetTests
                 var socksSocket = socksClient.Connect(new IPEndPoint(ipv4, 80));
 
                 socksSocket.Send(httpGetRequest);
-
-                var bytesReceived = socksSocket.Receive(httpResponseBuffer, 0, httpResponseBuffer.Length, SocketFlags.None);
-                using (var sr = new StringReader(Encoding.ASCII.GetString(httpResponseBuffer, 0, bytesReceived)))
-                {
-                    var firstLine = sr.ReadLine();
-
-                    Assert.AreEqual(searchText, firstLine);
-                }
+                var httpResponse = GetHttpResponse(socksSocket, Encoding.ASCII);
+                Assert.IsTrue(httpResponse.Contains(searchText), httpResponse);
 
                 forwardedPort.Dispose();
 
-                Assert.AreEqual(0, socksSocket.Receive(httpResponseBuffer, 0, httpResponseBuffer.Length, SocketFlags.None));
+                // check if client socket was properly closed
+                Assert.AreEqual(0, socksSocket.Receive(new byte[1], 0, 1, SocketFlags.None));
             }
         }
 
@@ -407,7 +481,7 @@ namespace SshNetTests
         public void Ssh_LocalPortForwardingCloseChannels()
         {
             const string hostNameAlias = "localportforwarding-test.for.sshnet";
-            const string hostName = "www.amazon.com";
+            const string hostName = "github.com";
 
             var ipAddress = Dns.GetHostAddresses(hostName)[0];
 
@@ -435,7 +509,7 @@ namespace SshNetTests
 
                         try
                         {
-                            var httpRequest = (HttpWebRequest) WebRequest.Create("http://" + localEndPoint + "/null");
+                            var httpRequest = (HttpWebRequest) WebRequest.Create("http://" + localEndPoint);
                             httpRequest.Host = hostName;
                             httpRequest.Method = "GET";
                             httpRequest.AllowAutoRedirect = false;
@@ -458,34 +532,6 @@ namespace SshNetTests
                                     Assert.AreEqual(HttpStatusCode.MovedPermanently, httpResponse.StatusCode);
                                 }
                             }
-
-
-                            /*
-                            if (!httpResponse.ContentType.StartsWith("text/html"))
-                            {
-                                Console.WriteLine(@"Expected 'text/html' and optionally the character, but was '{0}'.",
-                                                  httpResponse.ContentType);
-                                return false;
-                            }
-
-                            var responseStream = httpResponse.GetResponseStream();
-                            if (responseStream == null)
-                            {
-                                Console.WriteLine(@"ResponseStream is null.");
-                                return false;
-                            }
-
-                            using (var sr = new StreamReader(responseStream))
-                            {
-                                var responseText = sr.ReadToEnd();
-                                if (!responseText.Contains("<title>301 Moved Permanently</title>"))
-                                {
-                                    Console.WriteLine(
-                                        $@"Response does not contain 'The document has moved': {responseText}");
-                                    return false;
-                                }
-                            }
-                            */
                         }
                         finally
                         {
@@ -507,7 +553,7 @@ namespace SshNetTests
         public void Ssh_LocalPortForwarding()
         {
             const string hostNameAlias = "localportforwarding-test.for.sshnet";
-            const string hostName = "www.amazon.com";
+            const string hostName = "github.com";
 
             var ipAddress = Dns.GetHostAddresses(hostName)[0];
 
@@ -532,7 +578,7 @@ namespace SshNetTests
 
                     try
                     {
-                        var httpRequest = (HttpWebRequest) WebRequest.Create("http://" + localEndPoint + "/null");
+                        var httpRequest = (HttpWebRequest) WebRequest.Create("http://" + localEndPoint);
                         httpRequest.Host = hostName;
                         httpRequest.Method = "GET";
                         httpRequest.Accept = "text/html";
@@ -556,33 +602,6 @@ namespace SshNetTests
                                 Assert.AreEqual(HttpStatusCode.MovedPermanently, httpResponse.StatusCode);
                             }
                         }
-
-                        /*
-                        if (!httpResponse.ContentType.StartsWith("text/html"))
-                        {
-                            Console.WriteLine(@"Expected 'text/html' and optionally the character, but was '{0}'.",
-                                              httpResponse.ContentType);
-                            return false;
-                        }
-
-                        var responseStream = httpResponse.GetResponseStream();
-                        if (responseStream == null)
-                        {
-                            Console.WriteLine(@"ResponseStream is null.");
-                            return false;
-                        }
-
-                        using (var sr = new StreamReader(responseStream))
-                        {
-                            var responseText = sr.ReadToEnd();
-                            if (!responseText.Contains("<title>301 Moved Permanently</title>"))
-                            {
-                                Console.WriteLine(
-                                    $@"Response does not contain 'The document has moved': {responseText}");
-                                return false;
-                            }
-                        }
-                        */
                     }
                     finally
                     {
@@ -642,7 +661,7 @@ namespace SshNetTests
                 using (var s = client.CreateShellStream("a", 80, 25, 800, 600, 200))
                 {
                     s.WriteLine($"telnet {forwardedPort1.BoundHost} {forwardedPort1.BoundPort}");
-                    s.Expect("Escape character is '^]'.");
+                    s.Expect($"Connected to {forwardedPort1.BoundHost}\r\n");
                     s.WriteLine("ABC");
                     s.Flush();
                     s.Expect("ABC");
@@ -652,7 +671,7 @@ namespace SshNetTests
                 using (var s = client.CreateShellStream("b", 80, 25, 800, 600, 200))
                 {
                     s.WriteLine($"telnet {forwardedPort2.BoundHost} {forwardedPort2.BoundPort}");
-                    s.Expect("Escape character is '^]'.");
+                    s.Expect($"Connected to {forwardedPort2.BoundHost}\r\n");
                     s.WriteLine("DEF");
                     s.Flush();
                     s.Expect("DEF");
@@ -674,7 +693,7 @@ namespace SshNetTests
         /// Issue 1591
         /// </summary>
         [TestMethod]
-        public void Ssh_ExecuteBashScript()
+        public void Ssh_ExecuteShellScript()
         {
             const string remoteFile = "/home/sshnet/run.sh";
             const string content = "#\bin\bash\necho Hello World!";
@@ -711,7 +730,7 @@ namespace SshNetTests
                     var runLs = client.RunCommand("ls " + remoteFile);
                     var asyncResultLs = runLs.BeginExecute();
 
-                    var runScript = client.RunCommand("bash " + remoteFile);
+                    var runScript = client.RunCommand(remoteFile);
                     var asyncResultScript = runScript.BeginExecute();
 
                     Assert.IsTrue(asyncResultScript.AsyncWaitHandle.WaitOne(10000));
@@ -906,26 +925,31 @@ namespace SshNetTests
             }
         }
 
-        private static bool SocketResponseContains(Socket socket, byte[] httpResponseBuffer, string searchText)
+        private static string GetHttpResponse(Socket socket, Encoding encoding)
         {
+            var httpResponseBuffer = new byte[2048];
+
             // We expect:
             // * The response to contain the searchText in the first receive.
             // * The full response to be returned in the first receive.
 
             var bytesReceived = socket.Receive(httpResponseBuffer,
-                                                0,
-                                                httpResponseBuffer.Length,
-                                                SocketFlags.None);
+                                               0,
+                                               httpResponseBuffer.Length,
+                                               SocketFlags.None);
             if (bytesReceived == 0)
             {
-                return false;
+                return null;
             }
 
-            using (var sr = new StringReader(Encoding.ASCII.GetString(httpResponseBuffer, 0, bytesReceived)))
+            if (bytesReceived == httpResponseBuffer.Length)
             {
-                var content = sr.ReadToEnd();
+                throw new Exception("We expect the HTTP response to be less than the buffer size. If not, we won't consume the full response.");
+            }
 
-                return content.Contains(searchText);
+            using (var sr = new StringReader(encoding.GetString(httpResponseBuffer, 0, bytesReceived)))
+            {
+                return sr.ReadToEnd();
             }
         }
 

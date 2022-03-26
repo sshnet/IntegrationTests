@@ -33,7 +33,11 @@ RUN apk add --no-cache syslog-ng && \
     addgroup sshnetadm sudo && \
     dos2unix /opt/sshnet/* && \
     # install shadow package; we use chage command in this package to expire/unexpire password of the sshnet user
-    apk add --no-cache shadow
+    apk add --no-cache shadow && \
+    # allow us to use telnet command; we use this in the remote port forwarding tests
+    apk --no-cache add busybox-extras && \
+    # install full-fledged ps command
+    apk add --no-cache procps
 
 EXPOSE 22 22
 
