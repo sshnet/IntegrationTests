@@ -93,14 +93,9 @@ namespace SshNetTests
         }
 
         /// <summary>
-        /// Ignored for now, because:
-        /// * OutputStream.Read(...) does not block when no data is available
-        /// * SshCommand.(Begin)Execute consumes *OutputStream*, advancing its position.
-        /// 
-        /// https://github.com/sshnet/SSH.NET/issues/650
+        /// https://github.com/sshnet/SSH.NET/issues/63
         /// </summary>
         [TestMethod]
-        //[Ignore]
         public void Ssh_ShellStream_IntermittendOutput()
         {
             const string remoteFile = "/home/sshnet/test.sh";
@@ -257,7 +252,7 @@ namespace SshNetTests
         /// https://github.com/sshnet/SSH.NET/issues/650
         /// </summary>
         [TestMethod]
-        //[Ignore]
+        [Ignore]
         public void Ssh_Command_IntermittendOutput_OutputStream()
         {
             const string remoteFile = "/home/sshnet/test.sh";
