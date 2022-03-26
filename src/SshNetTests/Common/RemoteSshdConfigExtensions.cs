@@ -11,6 +11,7 @@ namespace SshNetTests.Common
             remoteSshdConfig.WithAuthenticationMethods(Users.Regular.UserName, DefaultAuthenticationMethods)
                             .WithChallengeResponseAuthentication(false)
                             .WithKeyboardInteractiveAuthentication(false)
+                            .PrintMotd()
                             .WithLogLevel(LogLevel.Debug3)
                             .ClearHostKeyFiles()
                             .AddHostKeyFile(HostKeyFile.Rsa.FilePath)
