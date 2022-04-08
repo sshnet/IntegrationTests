@@ -102,6 +102,32 @@ namespace SshNetTests
             return this;
         }
 
+        /// <summary>
+        /// Specifies whether <c>sshd</c> should print /etc/motd when a user logs in interactively.
+        /// </summary>
+        /// <param name="value"><see langword="true"/> if <c>sshd</c> should print /etc/motd when a user logs in interactively.</param>
+        /// <returns>
+        /// The current <see cref="RemoteSshdConfig"/> instance.
+        /// </returns>
+        public RemoteSshdConfig PrintMotd(bool? value = true)
+        {
+            _config.PrintMotd = value;
+            return this;
+        }
+
+        /// <summary>
+        /// Specifies whether TCP forwarding is permitted.
+        /// </summary>
+        /// <param name="value"><see langword="true"/> to allow TCP forwarding.</param>
+        /// <returns>
+        /// The current <see cref="RemoteSshdConfig"/> instance.
+        /// </returns>
+        public RemoteSshdConfig AllowTcpForwarding(bool? value = true)
+        {
+            _config.AllowTcpForwarding = value;
+            return this;
+        }
+
         public RemoteSshdConfig WithAuthenticationMethods(string user, string authenticationMethods)
         {
             var sshNetMatch = _config.Matches.FirstOrDefault(m => m.Users.Contains(user));

@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Renci.SshNet;
+using SshNet.TestTools.OpenSSH;
 using SshNetTests.Common;
 
 namespace SshNetTests
@@ -29,22 +30,46 @@ namespace SshNetTests
         [TestMethod]
         public void Ecdsa256()
         {
+            _remoteSshdConfig.AddPublicKeyAcceptedAlgorithms(PublicKeyAlgorithm.EcdsaSha2Nistp256)
+                             .Update()
+                             .Restart();
+
             var connectionInfo = _connectionInfoFactory.Create(CreatePrivateKeyAuthenticationMethod("key_ecdsa_256_openssh"));
 
             using (var client = new SshClient(connectionInfo))
             {
                 client.Connect();
-                client.Disconnect();
             }
         }
 
+        [TestMethod]
         public void Ecdsa384()
         {
+            _remoteSshdConfig.AddPublicKeyAcceptedAlgorithms(PublicKeyAlgorithm.EcdsaSha2Nistp384)
+                             .Update()
+                             .Restart();
 
+            var connectionInfo = _connectionInfoFactory.Create(CreatePrivateKeyAuthenticationMethod("key_ecdsa_384_openssh"));
+
+            using (var client = new SshClient(connectionInfo))
+            {
+                client.Connect();
+            }
         }
 
+        [TestMethod]
         public void EcdsaA521()
         {
+            _remoteSshdConfig.AddPublicKeyAcceptedAlgorithms(PublicKeyAlgorithm.EcdsaSha2Nistp521)
+                             .Update()
+                             .Restart();
+
+            var connectionInfo = _connectionInfoFactory.Create(CreatePrivateKeyAuthenticationMethod("key_ecdsa_521_openssh"));
+
+            using (var client = new SshClient(connectionInfo))
+            {
+                client.Connect();
+            }
         }
 
         private PrivateKeyAuthenticationMethod CreatePrivateKeyAuthenticationMethod(string keyResource)
