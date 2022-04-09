@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Threading;
 
 namespace SshNet.TestTools.OpenSSH
 {
     public sealed class DockerNetworkConnectivityDisruptor : NetworkConnectivityDisruptor
     {
+        [Obsolete("This method does not work, but is left here to test some other possibilities...")]
         public DockerNetworkConnectivityDisruptor(string containerName)
         {
             ContainerName = containerName;
@@ -15,29 +15,43 @@ namespace SshNet.TestTools.OpenSSH
 
         public override void Start()
         {
-            var process = DockerCommand($"pause {ContainerName}");
-            if (!process.WaitForExit(30000))
+            try
             {
-                process.Kill();
-                throw new ApplicationException("Failed to pause the 'sshnet' container: timed out.");
+                var process = DockerCommand($"pause {ContainerName}");
+                if (!process.WaitForExit(30000))
+                {
+                    process.Kill();
+                    throw new ApplicationException("Timed out.");
+                }
+                if (process.ExitCode != 0)
+                {
+                    throw new ApplicationException($"Status {process.ExitCode}.");
+                }
             }
-            if (process.ExitCode != 0)
+            catch (Exception ex)
             {
-                throw new ApplicationException($"Failed to pause the 'sshnet' container: status {process.ExitCode}.");
+                throw new NetworkConnectivityDisruptorException($"Failed to pause container '{ContainerName}': {ex.Message}", ex);
             }
         }
 
         public override void End()
         {
-            var process = DockerCommand($"unpause {ContainerName}");
-            if (!process.WaitForExit(30000))
+            try
             {
-                process.Kill();
-                throw new ApplicationException("Failed to resume the 'sshnet' container: timed out.");
+                var process = DockerCommand($"unpause {ContainerName}");
+                if (!process.WaitForExit(30000))
+                {
+                    process.Kill();
+                    throw new ApplicationException("Timed out.");
+                }
+                if (process.ExitCode != 0)
+                {
+                    throw new ApplicationException($"Status {process.ExitCode}.");
+                }
             }
-            if (process.ExitCode != 0)
+            catch (Exception ex)
             {
-                throw new ApplicationException($"Failed to resume the 'sshnet' container: status {process.ExitCode}.");
+                throw new NetworkConnectivityDisruptorException($"Failed to resume container '{ContainerName}': {ex.Message}", ex);
             }
         }
 

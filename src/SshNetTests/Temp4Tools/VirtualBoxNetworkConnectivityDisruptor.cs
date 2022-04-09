@@ -9,16 +9,36 @@ namespace SshNet.TestTools.OpenSSH
 {
     public sealed class VirtualBoxNetworkConnectivityDisruptor : NetworkConnectivityDisruptor
     {
-        private const string vmName = "sshnet";
+        public VirtualBoxNetworkConnectivityDisruptor(string machineName)
+        {
+            MachineName = machineName;
+        }
+
+        private string MachineName { get; }
+
 
         public override void Start()
         {
-            SetLinkState(vmName, on: false);
+            try
+            {
+                SetLinkState(MachineName, on: false);
+            }
+            catch (Exception ex)
+            {
+                throw new NetworkConnectivityDisruptorException($"Failed to disable link for VM '{MachineName}': {ex.Message}", ex);
+            }
         }
 
         public override void End()
         {
-            SetLinkState(vmName, on: true);
+            try
+            {
+                SetLinkState(MachineName, on: true);
+            }
+            catch (Exception ex)
+            {
+                throw new NetworkConnectivityDisruptorException($"Failed to enable link for VM '{MachineName}': {ex.Message}", ex);
+            }
         }
 
         private static string VirtualBoxFolder
@@ -126,7 +146,7 @@ namespace SshNet.TestTools.OpenSSH
         private static void DisableVirtualMachineNetworkConnection()
         {
             var runningVMs = GetRunningVMs();
-//            Assert.AreEqual(1, runningVMs.Count);
+            //            Assert.AreEqual(1, runningVMs.Count);
 
             SetLinkState(runningVMs[0], false);
             Thread.Sleep(1000);
@@ -135,7 +155,7 @@ namespace SshNet.TestTools.OpenSSH
         private static void EnableVirtualMachineNetworkConnection()
         {
             var runningVMs = GetRunningVMs();
-//            Assert.AreEqual(1, runningVMs.Count);
+            //            Assert.AreEqual(1, runningVMs.Count);
 
             SetLinkState(runningVMs[0], true);
             Thread.Sleep(1000);
@@ -144,7 +164,7 @@ namespace SshNet.TestTools.OpenSSH
         private static void ResetVirtualMachineNetworkConnection()
         {
             var runningVMs = GetRunningVMs();
-//            Assert.AreEqual(1, runningVMs.Count);
+            //            Assert.AreEqual(1, runningVMs.Count);
 
             SetPromiscuousMode(runningVMs[0], "allow-all");
             Thread.Sleep(1000);
