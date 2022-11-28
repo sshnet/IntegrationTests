@@ -17,7 +17,10 @@ RUN apk add --no-cache syslog-ng && \
     # install and configure sudo
     apk add --no-cache sudo && \
     addgroup sudo && \
-    sed -i 's/#\s*%sudo\s*ALL=(ALL)\s*ALL/%sudo ALL=(ALL) NOPASSWD:ALL/' /etc/sudoers && \
+    # allow root to run any command
+    echo 'root ALL=(ALL) ALL' > /etc/sudoers && \
+    # allow everyone in the 'sudo' group to run any command without a password
+    echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers && \
     # add user to run most of the integration tests
     adduser -D sshnet && \
     passwd -u sshnet && \
