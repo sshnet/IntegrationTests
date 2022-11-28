@@ -4220,7 +4220,7 @@ namespace SshNetTests
         }
 
         [TestMethod]
-        public void Sftp_SftpFileStream_Seek_BeyondEndOfFile()
+        public void Sftp_SftpFileStream_Seek_BeyondEndOfFile_SeekOriginBegin()
         {
             const string remoteFile = "/home/sshnet/test";
 
@@ -4242,12 +4242,14 @@ namespace SshNetTests
                         fs.WriteByte(0x04);
                     }
 
-
                     // seek beyond EOF but not beyond buffer size
                     // do not write anything
                     using (var fs = client.OpenWrite(remoteFile))
                     {
-                        fs.Seek(3L, SeekOrigin.Begin);
+                        var newPosition = fs.Seek(3L, SeekOrigin.Begin);
+
+                        Assert.AreEqual(3, newPosition);
+                        Assert.AreEqual(newPosition, fs.Position);
                     }
 
                     using (var fs = client.OpenRead(remoteFile))
@@ -4269,7 +4271,10 @@ namespace SshNetTests
                     // do not write anything
                     using (var fs = client.OpenWrite(remoteFile))
                     {
-                        fs.Seek(700L, SeekOrigin.Begin);
+                        var newPosition = fs.Seek(700L, SeekOrigin.Begin);
+
+                        Assert.AreEqual(700, newPosition);
+                        Assert.AreEqual(newPosition, fs.Position);
                     }
 
                     using (var fs = client.OpenRead(remoteFile))
@@ -4294,7 +4299,11 @@ namespace SshNetTests
 
                     using (var fs = client.OpenWrite(remoteFile))
                     {
-                        fs.Seek(seekOffset, SeekOrigin.Begin);
+                        var newPosition = fs.Seek(seekOffset, SeekOrigin.Begin);
+
+                        Assert.AreEqual(seekOffset, newPosition);
+                        Assert.AreEqual(newPosition, fs.Position);
+
                         fs.Write(writeBuffer, 0, writeBuffer.Length);
                     }
 
@@ -4329,7 +4338,11 @@ namespace SshNetTests
 
                     using (var fs = client.OpenWrite(remoteFile))
                     {
-                        fs.Seek(seekOffset, SeekOrigin.Begin);
+                        var newPosition = fs.Seek(seekOffset, SeekOrigin.Begin);
+
+                        Assert.AreEqual(seekOffset, newPosition);
+                        Assert.AreEqual(newPosition, fs.Position);
+
                         fs.Write(writeBuffer, 0, writeBuffer.Length);
                     }
 
@@ -4363,7 +4376,11 @@ namespace SshNetTests
 
                     using (var fs = client.OpenWrite(remoteFile))
                     {
-                        fs.Seek(3L, SeekOrigin.Begin);
+                        var newPosition = fs.Seek(3L, SeekOrigin.Begin);
+
+                        Assert.AreEqual(3, newPosition);
+                        Assert.AreEqual(newPosition, fs.Position);
+
                         fs.Write(writeBuffer, 0, writeBuffer.Length);
                     }
 
@@ -4395,7 +4412,11 @@ namespace SshNetTests
 
                     using (var fs = client.OpenWrite(remoteFile))
                     {
-                        fs.Seek(550, SeekOrigin.Begin);
+                        var newPosition = fs.Seek(550, SeekOrigin.Begin);
+
+                        Assert.AreEqual(550, newPosition);
+                        Assert.AreEqual(newPosition, fs.Position);
+
                         fs.Write(writeBuffer, 0, writeBuffer.Length);
                     }
 
@@ -4412,6 +4433,400 @@ namespace SshNetTests
                         var readBuffer = new byte[writeBuffer.Length];
                         Assert.AreEqual(writeBuffer.Length, fs.Read(readBuffer, 0, readBuffer.Length));
                         Assert.IsTrue(writeBuffer.IsEqualTo(readBuffer));
+
+                        Assert.AreEqual(-1, fs.ReadByte());
+                    }
+                }
+                finally
+                {
+                    if (client.Exists(remoteFile))
+                    {
+                        client.DeleteFile(remoteFile);
+                    }
+                }
+            }
+        }
+
+        [TestMethod]
+        public void Sftp_SftpFileStream_Seek_BeyondEndOfFile_SeekOriginEnd()
+        {
+            const string remoteFile = "/home/sshnet/test";
+
+            using (var client = new SftpClient(_connectionInfoFactory.Create()))
+            {
+                client.BufferSize = 500;
+                client.Connect();
+
+                if (client.Exists(remoteFile))
+                {
+                    client.DeleteFile(remoteFile);
+                }
+
+                try
+                {
+                    // create single-byte file
+                    using (var fs = client.OpenWrite(remoteFile))
+                    {
+                        fs.WriteByte(0x04);
+                    }
+
+                    // seek beyond EOF but not beyond buffer size
+                    // do not write anything
+                    using (var fs = client.OpenWrite(remoteFile))
+                    {
+                        var newPosition = fs.Seek(3L, SeekOrigin.End);
+
+                        Assert.AreEqual(4, newPosition);
+                        Assert.AreEqual(newPosition, fs.Position);
+                    }
+
+                    using (var fs = client.OpenRead(remoteFile))
+                    {
+                        Assert.AreEqual(1, fs.Length);
+                        Assert.AreEqual(0x04, fs.ReadByte());
+                        Assert.AreEqual(-1, fs.ReadByte());
+                    }
+
+                    client.DeleteFile(remoteFile);
+
+                    // create single-byte file
+                    using (var fs = client.OpenWrite(remoteFile))
+                    {
+                        fs.WriteByte(0x04);
+                    }
+
+                    // seek beyond EOF and beyond buffer size
+                    // do not write anything
+                    using (var fs = client.OpenWrite(remoteFile))
+                    {
+                        var newPosition = fs.Seek(700L, SeekOrigin.End);
+
+                        Assert.AreEqual(701, newPosition);
+                        Assert.AreEqual(newPosition, fs.Position);
+                    }
+
+                    using (var fs = client.OpenRead(remoteFile))
+                    {
+                        Assert.AreEqual(1, fs.Length);
+                        Assert.AreEqual(0x04, fs.ReadByte());
+                        Assert.AreEqual(-1, fs.ReadByte());
+                    }
+
+                    client.DeleteFile(remoteFile);
+
+                    // create single-byte file
+                    using (var fs = client.OpenWrite(remoteFile))
+                    {
+                        fs.WriteByte(0x04);
+                    }
+
+                    // seek beyond EOF but not beyond buffer size
+                    // write less bytes than buffer size
+                    var seekOffset = 3L;
+                    var writeBuffer = GenerateRandom(7);
+
+                    using (var fs = client.OpenWrite(remoteFile))
+                    {
+                        var newPosition = fs.Seek(seekOffset, SeekOrigin.End);
+
+                        Assert.AreEqual(4, newPosition);
+                        Assert.AreEqual(newPosition, fs.Position);
+
+                        fs.Write(writeBuffer, 0, writeBuffer.Length);
+                    }
+
+                    using (var fs = client.OpenRead(remoteFile))
+                    {
+                        Assert.AreEqual(1 + seekOffset + writeBuffer.Length, fs.Length);
+                        Assert.AreEqual(0x04, fs.ReadByte());
+
+                        var emptyBuffer = new byte[seekOffset];
+                        Assert.AreEqual(emptyBuffer.Length, fs.Read(emptyBuffer, 0, emptyBuffer.Length));
+                        Assert.IsTrue(new byte[emptyBuffer.Length].IsEqualTo(emptyBuffer));
+
+                        var readBuffer = new byte[writeBuffer.Length];
+                        Assert.AreEqual(readBuffer.Length, fs.Read(readBuffer, 0, readBuffer.Length));
+                        Assert.IsTrue(writeBuffer.IsEqualTo(readBuffer));
+
+                        Assert.AreEqual(-1, fs.ReadByte());
+                    }
+
+                    client.DeleteFile(remoteFile);
+
+                    // create single-byte file
+                    using (var fs = client.OpenWrite(remoteFile))
+                    {
+                        fs.WriteByte(0x04);
+                    }
+
+                    // seek beyond EOF and beyond buffer size
+                    // write less bytes than buffer size
+                    seekOffset = 700L;
+                    writeBuffer = GenerateRandom(4);
+
+                    using (var fs = client.OpenWrite(remoteFile))
+                    {
+                        var newPosition = fs.Seek(seekOffset, SeekOrigin.End);
+
+                        Assert.AreEqual(1 + seekOffset, newPosition);
+                        Assert.AreEqual(newPosition, fs.Position);
+
+                        fs.Write(writeBuffer, 0, writeBuffer.Length);
+                    }
+
+                    using (var fs = client.OpenRead(remoteFile))
+                    {
+                        Assert.AreEqual(1 + seekOffset + writeBuffer.Length, fs.Length);
+                        Assert.AreEqual(0x04, fs.ReadByte());
+
+                        var emptyBuffer = new byte[seekOffset];
+                        Assert.AreEqual(emptyBuffer.Length, fs.Read(emptyBuffer, 0, emptyBuffer.Length));
+                        Assert.IsTrue(new byte[emptyBuffer.Length].IsEqualTo(emptyBuffer));
+
+                        var readBuffer = new byte[writeBuffer.Length];
+                        Assert.AreEqual(readBuffer.Length, fs.Read(readBuffer, 0, readBuffer.Length));
+                        Assert.IsTrue(writeBuffer.IsEqualTo(readBuffer));
+
+                        Assert.AreEqual(-1, fs.ReadByte());
+                    }
+
+                    client.DeleteFile(remoteFile);
+
+                    // create single-byte file
+                    using (var fs = client.OpenWrite(remoteFile))
+                    {
+                        fs.WriteByte(0x04);
+                    }
+
+                    // seek beyond EOF but not beyond buffer size
+                    // write more bytes than buffer size
+                    seekOffset = 3L;
+                    writeBuffer = GenerateRandom(600);
+
+                    using (var fs = client.OpenWrite(remoteFile))
+                    {
+                        var newPosition = fs.Seek(seekOffset, SeekOrigin.End);
+
+                        Assert.AreEqual(1 + seekOffset, newPosition);
+                        Assert.AreEqual(newPosition, fs.Position);
+
+                        fs.Write(writeBuffer, 0, writeBuffer.Length);
+                    }
+
+                    using (var fs = client.OpenRead(remoteFile))
+                    {
+                        Assert.AreEqual(1 + seekOffset + writeBuffer.Length, fs.Length);
+                        Assert.AreEqual(0x04, fs.ReadByte());
+
+                        var emptyBuffer = new byte[seekOffset];
+                        Assert.AreEqual(emptyBuffer.Length, fs.Read(emptyBuffer, 0, emptyBuffer.Length));
+                        Assert.IsTrue(new byte[emptyBuffer.Length].IsEqualTo(emptyBuffer));
+
+                        var readBuffer = new byte[writeBuffer.Length];
+                        Assert.AreEqual(writeBuffer.Length, fs.Read(readBuffer, 0, readBuffer.Length));
+                        Assert.IsTrue(writeBuffer.IsEqualTo(readBuffer));
+
+                        Assert.AreEqual(-1, fs.ReadByte());
+                    }
+
+                    client.DeleteFile(remoteFile);
+
+                    // create single-byte file
+                    using (var fs = client.OpenWrite(remoteFile))
+                    {
+                        fs.WriteByte(0x04);
+                    }
+
+                    // seek beyond EOF and beyond buffer size
+                    // write more bytes than buffer size
+                    seekOffset = 550L;
+                    writeBuffer = GenerateRandom(600);
+
+                    using (var fs = client.OpenWrite(remoteFile))
+                    {
+                        var newPosition = fs.Seek(seekOffset, SeekOrigin.End);
+
+                        Assert.AreEqual(1 + seekOffset, newPosition);
+                        Assert.AreEqual(newPosition, fs.Position);
+
+                        fs.Write(writeBuffer, 0, writeBuffer.Length);
+                    }
+
+                    using (var fs = client.OpenRead(remoteFile))
+                    {
+                        Assert.AreEqual(1 + seekOffset + writeBuffer.Length, fs.Length);
+
+                        Assert.AreEqual(0x04, fs.ReadByte());
+
+                        var emptyBuffer = new byte[seekOffset];
+                        Assert.AreEqual(emptyBuffer.Length, fs.Read(emptyBuffer, 0, emptyBuffer.Length));
+                        Assert.IsTrue(new byte[emptyBuffer.Length].IsEqualTo(emptyBuffer));
+
+                        var readBuffer = new byte[writeBuffer.Length];
+                        Assert.AreEqual(writeBuffer.Length, fs.Read(readBuffer, 0, readBuffer.Length));
+                        Assert.IsTrue(writeBuffer.IsEqualTo(readBuffer));
+
+                        Assert.AreEqual(-1, fs.ReadByte());
+                    }
+                }
+                finally
+                {
+                    if (client.Exists(remoteFile))
+                    {
+                        client.DeleteFile(remoteFile);
+                    }
+                }
+            }
+        }
+
+        [TestMethod]
+        public void Sftp_SftpFileStream_Seek_NegativeOffSet_SeekOriginEnd()
+        {
+            const string remoteFile = "/home/sshnet/test";
+
+            using (var client = new SftpClient(_connectionInfoFactory.Create()))
+            {
+                client.BufferSize = 500;
+                client.Connect();
+
+                if (client.Exists(remoteFile))
+                {
+                    client.DeleteFile(remoteFile);
+                }
+
+                try
+                {
+                    using (var fs = client.OpenWrite(remoteFile))
+                    {
+                        fs.WriteByte(0x04);
+                        fs.WriteByte(0x07);
+                        fs.WriteByte(0x05);
+                    }
+
+                    // seek within file and not beyond buffer size
+                    // do not write anything
+                    using (var fs = client.OpenWrite(remoteFile))
+                    {
+                        var newPosition = fs.Seek(-2L, SeekOrigin.End);
+
+                        Assert.AreEqual(1, newPosition);
+                        Assert.AreEqual(newPosition, fs.Position);
+                    }
+
+                    using (var fs = client.OpenRead(remoteFile))
+                    {
+                        Assert.AreEqual(3, fs.Length);
+                        Assert.AreEqual(0x04, fs.ReadByte());
+                        Assert.AreEqual(0x07, fs.ReadByte());
+                        Assert.AreEqual(0x05, fs.ReadByte());
+                        Assert.AreEqual(-1, fs.ReadByte());
+                    }
+
+                    client.DeleteFile(remoteFile);
+
+                    var writeBuffer = GenerateRandom((int) client.BufferSize + 200);
+
+                    using (var fs = client.OpenWrite(remoteFile))
+                    {
+                        fs.Write(writeBuffer, 0, writeBuffer.Length);
+                    }
+
+                    // seek within EOF and beyond buffer size
+                    // do not write anything
+                    using (var fs = client.OpenWrite(remoteFile))
+                    {
+                        var newPosition = fs.Seek(-100L, SeekOrigin.End);
+
+                        Assert.AreEqual(600, newPosition);
+                        Assert.AreEqual(newPosition, fs.Position);
+                    }
+
+                    using (var fs = client.OpenRead(remoteFile))
+                    {
+                        Assert.AreEqual(writeBuffer.Length, fs.Length);
+
+                        var readBuffer = new byte[writeBuffer.Length];
+                        Assert.AreEqual(writeBuffer.Length, fs.Read(readBuffer, 0, readBuffer.Length));
+                        Assert.IsTrue(writeBuffer.IsEqualTo(readBuffer));
+
+                        Assert.AreEqual(-1, fs.ReadByte());
+                    }
+
+                    client.DeleteFile(remoteFile);
+
+                    // seek within EOF and within buffer size
+                    // write less bytes than buffer size
+                    using (var fs = client.OpenWrite(remoteFile))
+                    {
+                        fs.Write(writeBuffer, 0, writeBuffer.Length);
+
+                        var newPosition = fs.Seek(-3, SeekOrigin.End);
+
+                        Assert.AreEqual(697, newPosition);
+                        Assert.AreEqual(newPosition, fs.Position);
+
+                        fs.WriteByte(0x01);
+                        fs.WriteByte(0x05);
+                        fs.WriteByte(0x04);
+                        fs.WriteByte(0x07);
+                    }
+
+                    using (var fs = client.OpenRead(remoteFile))
+                    {
+                        Assert.AreEqual(writeBuffer.Length + 1, fs.Length);
+
+                        var readBuffer = new byte[writeBuffer.Length - 3];
+                        Assert.AreEqual(readBuffer.Length, fs.Read(readBuffer, 0, readBuffer.Length));
+                        Assert.IsTrue(readBuffer.SequenceEqual(writeBuffer.Take(readBuffer.Length)));
+
+                        Assert.AreEqual(0x01, fs.ReadByte());
+                        Assert.AreEqual(0x05, fs.ReadByte());
+                        Assert.AreEqual(0x04, fs.ReadByte());
+                        Assert.AreEqual(0x07, fs.ReadByte());
+
+                        Assert.AreEqual(-1, fs.ReadByte());
+                    }
+
+                    client.DeleteFile(remoteFile);
+
+                    writeBuffer = GenerateRandom((int) client.BufferSize * 4);
+
+                    // seek within EOF and beyond buffer size
+                    // write less bytes than buffer size
+                    using (var fs = client.OpenWrite(remoteFile))
+                    {
+                        fs.Write(writeBuffer, 0, writeBuffer.Length);
+
+                        var newPosition = fs.Seek(- (client.BufferSize * 2), SeekOrigin.End);
+
+                        Assert.AreEqual(1000, newPosition);
+                        Assert.AreEqual(newPosition, fs.Position);
+
+                        fs.WriteByte(0x01);
+                        fs.WriteByte(0x05);
+                        fs.WriteByte(0x04);
+                        fs.WriteByte(0x07);
+                    }
+
+                    using (var fs = client.OpenRead(remoteFile))
+                    {
+                        Assert.AreEqual(writeBuffer.Length, fs.Length);
+
+                        // First part of file should not have been touched
+                        var readBuffer = new byte[(int) client.BufferSize * 2];
+                        Assert.AreEqual(readBuffer.Length, fs.Read(readBuffer, 0, readBuffer.Length));
+                        Assert.IsTrue(readBuffer.SequenceEqual(writeBuffer.Take(readBuffer.Length)));
+
+                        // Check part that should have been updated
+                        Assert.AreEqual(0x01, fs.ReadByte());
+                        Assert.AreEqual(0x05, fs.ReadByte());
+                        Assert.AreEqual(0x04, fs.ReadByte());
+                        Assert.AreEqual(0x07, fs.ReadByte());
+
+                        // Remaining bytes should not have been touched
+                        readBuffer = new byte[((int) client.BufferSize * 2) - 4];
+                        Assert.AreEqual(readBuffer.Length, fs.Read(readBuffer, 0, readBuffer.Length));
+                        Assert.IsTrue(readBuffer.SequenceEqual(writeBuffer.Skip(((int)client.BufferSize * 2) + 4).Take(readBuffer.Length)));
 
                         Assert.AreEqual(-1, fs.ReadByte());
                     }
@@ -4452,7 +4867,11 @@ namespace SshNetTests
 
                     using (var ws = client.OpenWrite(remoteFile))
                     {
-                        ws.Seek(3, SeekOrigin.Begin);
+                        var newPosition = ws.Seek(3, SeekOrigin.Begin);
+
+                        Assert.AreEqual(3, newPosition);
+                        Assert.AreEqual(newPosition, ws.Position);
+
                         ws.Write(buf, 3, 3);
                     }
 
@@ -4499,7 +4918,10 @@ namespace SshNetTests
 
                         Assert.AreEqual(readBuffer.Length, fs.Read(readBuffer, 0, readBuffer.Length));
 
-                        fs.Seek(3L, SeekOrigin.Begin);
+                        var newPosition = fs.Seek(3L, SeekOrigin.Begin);
+
+                        Assert.AreEqual(3L, newPosition);
+                        Assert.AreEqual(newPosition, fs.Position);
                     }
 
                     client.DeleteFile(remoteFile);
@@ -4521,7 +4943,10 @@ namespace SshNetTests
 
                     using (var fs = client.OpenWrite(remoteFile))
                     {
-                        fs.Seek(700L, SeekOrigin.Begin);
+                        var newPosition = fs.Seek(700L, SeekOrigin.Begin);
+
+                        Assert.AreEqual(700L, newPosition);
+                        Assert.AreEqual(newPosition, fs.Position);
                     }
 
                     using (var fs = client.OpenRead(remoteFile))
@@ -4548,7 +4973,11 @@ namespace SshNetTests
 
                     using (var fs = client.OpenWrite(remoteFile))
                     {
-                        fs.Seek(seekOffset, SeekOrigin.Begin);
+                        var newPosition = fs.Seek(seekOffset, SeekOrigin.Begin);
+
+                        Assert.AreEqual(seekOffset, newPosition);
+                        Assert.AreEqual(newPosition, fs.Position);
+
                         fs.Write(writeBuffer, 0, writeBuffer.Length);
                     }
 
@@ -4585,7 +5014,11 @@ namespace SshNetTests
 
                     using (var fs = client.OpenWrite(remoteFile))
                     {
-                        fs.Seek(seekOffset, SeekOrigin.Begin);
+                        var newPosition = fs.Seek(seekOffset, SeekOrigin.Begin);
+
+                        Assert.AreEqual(seekOffset, newPosition);
+                        Assert.AreEqual(newPosition, fs.Position);
+
                         fs.Write(writeBuffer, 0, writeBuffer.Length);
                     }
 
@@ -4622,7 +5055,11 @@ namespace SshNetTests
 
                     using (var fs = client.OpenWrite(remoteFile))
                     {
-                        fs.Seek(seekOffset, SeekOrigin.Begin);
+                        var newPosition = fs.Seek(seekOffset, SeekOrigin.Begin);
+
+                        Assert.AreEqual(seekOffset, newPosition);
+                        Assert.AreEqual(newPosition, fs.Position);
+
                         fs.Write(writeBuffer, 0, writeBuffer.Length);
                     }
 
@@ -4657,7 +5094,11 @@ namespace SshNetTests
 
                     using (var fs = client.OpenWrite(remoteFile))
                     {
-                        fs.Seek(550, SeekOrigin.Begin);
+                        var newPosition = fs.Seek(seekOffset, SeekOrigin.Begin);
+
+                        Assert.AreEqual(seekOffset, newPosition);
+                        Assert.AreEqual(newPosition, fs.Position);
+
                         fs.Write(writeBuffer, 0, writeBuffer.Length);
                     }
 
