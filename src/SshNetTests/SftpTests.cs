@@ -48,13 +48,14 @@ namespace SshNetTests
 #endif
         public void Sftp_UploadFile_FileStream(int size)
         {
-            const string remoteFile = "/home/sshnet/test";
             var file = CreateTempFile(size);
 
             using (var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read))
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -130,7 +131,6 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_BeginUploadFile()
         {
-            const string remoteFile = "/home/sshnet/test";
             const string content = "SftpBeginUploadFile";
 
             var expectedByteCount = (ulong) Encoding.ASCII.GetByteCount(content);
@@ -138,6 +138,8 @@ namespace SshNetTests
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -193,8 +195,6 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_Create_ExistingFile()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             var encoding = Encoding.UTF8;
             var initialContent = "Gert & Ann & Lisa";
             var newContent1 = "Sofie";
@@ -205,6 +205,8 @@ namespace SshNetTests
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -295,12 +297,12 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_Create_FileDoesNotExist()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.BufferSize = 512 * 1024;
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -316,9 +318,9 @@ namespace SshNetTests
                             byte[] buffer = new byte[Math.Min(client.BufferSize, imageStream.Length)];
                             int bytesRead;
 
-                            while ((bytesRead = imageStream.Read(buffer, 0, buffer.Length)) > 0)
+                            while ((bytesRead = imageStream.Read(buffer, offset: 0, buffer.Length)) > 0)
                             {
-                                fs.Write(buffer, 0, bytesRead);
+                                fs.Write(buffer, offset: 0, bytesRead);
                             }
                         }
 
@@ -346,8 +348,6 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_AppendAllLines_NoEncoding_ExistingFile()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             var initialContent = "\u0100ert & Ann";
             IEnumerable<string> linesToAppend = new[] { "Forever", "&", "\u0116ver" };
             var expectedContent = initialContent + string.Join(Environment.NewLine, linesToAppend) +
@@ -356,6 +356,8 @@ namespace SshNetTests
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -422,14 +424,14 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_AppendAllLines_NoEncoding_FileDoesNotExist()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             IEnumerable<string> linesToAppend = new[] { "\u0139isa", "&", "Sofie" };
             var expectedContent = string.Join(Environment.NewLine, linesToAppend) + Environment.NewLine;
 
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -463,8 +465,6 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_AppendAllText_NoEncoding_ExistingFile()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             var initialContent = "\u0100ert & Ann";
             var contentToAppend = "Forever&\u0116ver";
             var expectedContent = initialContent + contentToAppend;
@@ -472,6 +472,8 @@ namespace SshNetTests
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -540,14 +542,14 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_AppendAllText_NoEncoding_FileDoesNotExist()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             var contentToAppend = "Forever&\u0116ver";
             var expectedContent = contentToAppend;
 
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -581,8 +583,6 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_AppendText_NoEncoding_ExistingFile()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             var initialContent = "\u0100ert & Ann";
             var contentToAppend = "Forever&\u0116ver";
             var expectedContent = initialContent + contentToAppend;
@@ -591,8 +591,12 @@ namespace SshNetTests
             {
                 client.Connect();
 
+                var remoteFile = GenerateUniqueRemoteFileName();
+
                 if (client.Exists(remoteFile))
+                {
                     client.DeleteFile(remoteFile);
+                }
 
                 try
                 {
@@ -667,14 +671,14 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_AppendText_NoEncoding_FileDoesNotExist()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             var contentToAppend = "\u0100ert & Ann";
             var expectedContent = contentToAppend;
 
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -708,8 +712,6 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_AppendAllLines_Encoding_ExistingFile()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             var initialContent = "\u0100ert & Ann";
             IEnumerable<string> linesToAppend = new[] { "Forever", "&", "\u0116ver" };
             var expectedContent = initialContent + string.Join(Environment.NewLine, linesToAppend) +
@@ -720,6 +722,8 @@ namespace SshNetTests
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -737,7 +741,7 @@ namespace SshNetTests
                     using (var fs = client.OpenRead(remoteFile))
                     {
                         var actualBytes = new byte[fs.Length];
-                        fs.Read(actualBytes, 0, actualBytes.Length);
+                        fs.Read(actualBytes, offset: 0, actualBytes.Length);
                         Assert.IsTrue(expectedBytes.IsEqualTo(actualBytes));
                     }
                 }
@@ -790,8 +794,6 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_AppendAllLines_Encoding_FileDoesNotExist()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             IEnumerable<string> linesToAppend = new[] { "\u0139isa", "&", "Sofie" };
             var expectedContent = string.Join(Environment.NewLine, linesToAppend) + Environment.NewLine;
             var encoding = GetRandomEncoding();
@@ -800,6 +802,8 @@ namespace SshNetTests
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -816,7 +820,7 @@ namespace SshNetTests
                     using (var fs = client.OpenRead(remoteFile))
                     {
                         var actualBytes = new byte[fs.Length];
-                        fs.Read(actualBytes, 0, actualBytes.Length);
+                        fs.Read(actualBytes, offset: 0, actualBytes.Length);
                         Assert.IsTrue(expectedBytes.IsEqualTo(actualBytes));
                     }
                 }
@@ -833,8 +837,6 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_AppendAllText_Encoding_ExistingFile()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             var initialContent = "\u0100ert & Ann";
             var contentToAppend = "Forever&\u0116ver";
             var expectedContent = initialContent + contentToAppend;
@@ -844,6 +846,8 @@ namespace SshNetTests
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -861,7 +865,7 @@ namespace SshNetTests
                     using (var fs = client.OpenRead(remoteFile))
                     {
                         var actualBytes = new byte[fs.Length];
-                        fs.Read(actualBytes, 0, actualBytes.Length);
+                        fs.Read(actualBytes, offset: 0, actualBytes.Length);
                         Assert.IsTrue(expectedBytes.IsEqualTo(actualBytes));
                     }
                 }
@@ -915,8 +919,6 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_AppendAllText_Encoding_FileDoesNotExist()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             const string contentToAppend = "Forever&\u0116ver";
             var expectedContent = contentToAppend;
             var encoding = GetRandomEncoding();
@@ -925,6 +927,8 @@ namespace SshNetTests
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -941,7 +945,7 @@ namespace SshNetTests
                     using (var fs = client.OpenRead(remoteFile))
                     {
                         var actualBytes = new byte[fs.Length];
-                        fs.Read(actualBytes, 0, actualBytes.Length);
+                        fs.Read(actualBytes, offset: 0, actualBytes.Length);
                         Assert.IsTrue(expectedBytes.IsEqualTo(actualBytes));
                     }
                 }
@@ -958,8 +962,6 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_AppendText_Encoding_ExistingFile()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             const string initialContent = "\u0100ert & Ann";
             const string contentToAppend = "Forever&\u0116ver";
             var expectedContent = initialContent + contentToAppend;
@@ -969,6 +971,8 @@ namespace SshNetTests
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -990,7 +994,7 @@ namespace SshNetTests
                     using (var fs = client.OpenRead(remoteFile))
                     {
                         var actualBytes = new byte[fs.Length];
-                        fs.Read(actualBytes, 0, actualBytes.Length);
+                        fs.Read(actualBytes, offset: 0, actualBytes.Length);
                         Assert.IsTrue(expectedBytes.IsEqualTo(actualBytes));
                     }
                 }
@@ -1049,8 +1053,6 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_AppendText_Encoding_FileDoesNotExist()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             var encoding = GetRandomEncoding();
             const string contentToAppend = "\u0100ert & Ann";
             var expectedBytes = GetBytesWithPreamble(contentToAppend, encoding);
@@ -1058,6 +1060,8 @@ namespace SshNetTests
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -1074,7 +1078,7 @@ namespace SshNetTests
                     using (var fs = client.OpenRead(remoteFile))
                     {
                         var actualBytes = new byte[fs.Length];
-                        fs.Read(actualBytes, 0, actualBytes.Length);
+                        fs.Read(actualBytes, offset: 0, actualBytes.Length);
                         Assert.IsTrue(expectedBytes.IsEqualTo(actualBytes));
                     }
                 }
@@ -1091,8 +1095,6 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_CreateText_NoEncoding_ExistingFile()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             var encoding = new UTF8Encoding(false, true);
             const string initialContent = "\u0100ert & Ann";
             var initialContentBytes = GetBytesWithPreamble(initialContent, encoding);
@@ -1103,6 +1105,8 @@ namespace SshNetTests
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -1121,7 +1125,7 @@ namespace SshNetTests
                     using (var fs = client.OpenRead(remoteFile))
                     {
                         var actualBytes = new byte[fs.Length];
-                        fs.Read(actualBytes, 0, actualBytes.Length);
+                        fs.Read(actualBytes, offset: 0, actualBytes.Length);
                         Assert.IsTrue(initialContentBytes.IsEqualTo(actualBytes));
                     }
 
@@ -1138,7 +1142,7 @@ namespace SshNetTests
                     using (var fs = client.OpenRead(remoteFile))
                     {
                         var actualBytes = new byte[fs.Length];
-                        fs.Read(actualBytes, 0, actualBytes.Length);
+                        fs.Read(actualBytes, offset: 0, actualBytes.Length);
                         Assert.IsTrue(expectedContentBytes.IsEqualTo(actualBytes));
                     }
                 }
@@ -1196,8 +1200,6 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_CreateText_NoEncoding_FileDoesNotExist()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             var encoding = new UTF8Encoding(false, true);
             var initialContent = "\u0100ert & Ann";
             var initialContentBytes = GetBytesWithPreamble(initialContent, encoding);
@@ -1205,6 +1207,8 @@ namespace SshNetTests
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -1237,7 +1241,7 @@ namespace SshNetTests
                     using (var fs = client.OpenRead(remoteFile))
                     {
                         var actualBytes = new byte[fs.Length];
-                        fs.Read(actualBytes, 0, actualBytes.Length);
+                        fs.Read(actualBytes, offset: 0, actualBytes.Length);
                         Assert.IsTrue(initialContentBytes.IsEqualTo(actualBytes));
                     }
                 }
@@ -1254,8 +1258,6 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_CreateText_Encoding_ExistingFile()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             var encoding = GetRandomEncoding();
             var initialContent = "\u0100ert & Ann";
             var initialContentBytes = GetBytesWithPreamble(initialContent, encoding);
@@ -1266,6 +1268,8 @@ namespace SshNetTests
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -1284,7 +1288,7 @@ namespace SshNetTests
                     using (var fs = client.OpenRead(remoteFile))
                     {
                         var actualBytes = new byte[fs.Length];
-                        fs.Read(actualBytes, 0, actualBytes.Length);
+                        fs.Read(actualBytes, offset: 0, actualBytes.Length);
                         Assert.IsTrue(initialContentBytes.IsEqualTo(actualBytes));
                     }
 
@@ -1301,7 +1305,7 @@ namespace SshNetTests
                     using (var fs = client.OpenRead(remoteFile))
                     {
                         var actualBytes = new byte[fs.Length];
-                        fs.Read(actualBytes, 0, actualBytes.Length);
+                        fs.Read(actualBytes, offset: 0, actualBytes.Length);
                         Assert.IsTrue(expectedContentBytes.IsEqualTo(actualBytes));
                     }
                 }
@@ -1361,8 +1365,6 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_CreateText_Encoding_FileDoesNotExist()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             var encoding = GetRandomEncoding();
             var initialContent = "\u0100ert & Ann";
             var initialContentBytes = GetBytesWithPreamble(initialContent, encoding);
@@ -1370,6 +1372,8 @@ namespace SshNetTests
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -1402,7 +1406,7 @@ namespace SshNetTests
                     using (var fs = client.OpenRead(remoteFile))
                     {
                         var actualBytes = new byte[fs.Length];
-                        fs.Read(actualBytes, 0, actualBytes.Length);
+                        fs.Read(actualBytes, offset: 0, actualBytes.Length);
                         Assert.IsTrue(initialContentBytes.IsEqualTo(actualBytes));
                     }
                 }
@@ -1419,11 +1423,11 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_DownloadFile_FileDoesNotExist()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -1459,8 +1463,6 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_ReadAllBytes_ExistingFile()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             var encoding = GetRandomEncoding();
             var content = "\u0100ert & Ann";
             var contentBytes = GetBytesWithPreamble(content, encoding);
@@ -1468,6 +1470,8 @@ namespace SshNetTests
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -1494,11 +1498,11 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_ReadAllBytes_FileDoesNotExist()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -1531,8 +1535,6 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_ReadAllLines_NoEncoding_ExistingFile()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             var encoding = new UTF8Encoding(false, true);
             var lines = new[] { "\u0100ert & Ann", "Forever", "&", "\u0116ver" };
             var linesBytes = GetBytesWithPreamble(string.Join(Environment.NewLine, lines) + Environment.NewLine,
@@ -1541,6 +1543,8 @@ namespace SshNetTests
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -1567,7 +1571,7 @@ namespace SshNetTests
                     using (var fs = client.OpenRead(remoteFile))
                     {
                         var actualBytes = new byte[fs.Length];
-                        fs.Read(actualBytes, 0, actualBytes.Length);
+                        fs.Read(actualBytes, offset: 0, actualBytes.Length);
                         Assert.IsTrue(linesBytes.IsEqualTo(actualBytes));
                     }
                 }
@@ -1584,14 +1588,16 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_ReadAllLines_NoEncoding_FileDoesNotExist()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
 
+                var remoteFile = GenerateUniqueRemoteFileName();
+
                 if (client.Exists(remoteFile))
+                {
                     client.DeleteFile(remoteFile);
+                }
 
                 try
                 {
@@ -1619,8 +1625,6 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_ReadAllLines_Encoding_ExistingFile()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             var encoding = GetRandomEncoding();
             var lines = new[] { "\u0100ert & Ann", "Forever", "&", "\u0116ver" };
             var linesBytes = GetBytesWithPreamble(string.Join(Environment.NewLine, lines) + Environment.NewLine,
@@ -1630,8 +1634,12 @@ namespace SshNetTests
             {
                 client.Connect();
 
+                var remoteFile = GenerateUniqueRemoteFileName();
+
                 if (client.Exists(remoteFile))
+                {
                     client.DeleteFile(remoteFile);
+                }
 
                 try
                 {
@@ -1653,7 +1661,7 @@ namespace SshNetTests
                     using (var fs = client.OpenRead(remoteFile))
                     {
                         var actualBytes = new byte[fs.Length];
-                        fs.Read(actualBytes, 0, actualBytes.Length);
+                        fs.Read(actualBytes, offset: 0, actualBytes.Length);
                         Assert.IsTrue(linesBytes.IsEqualTo(actualBytes));
                     }
                 }
@@ -1670,13 +1678,13 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_ReadAllLines_Encoding_FileDoesNotExist()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             var encoding = GetRandomEncoding();
 
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -1709,8 +1717,6 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_ReadAllText_NoEncoding_ExistingFile()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             var encoding = new UTF8Encoding(false, true);
             var lines = new[] { "\u0100ert & Ann", "Forever", "&", "\u0116ver" };
             var expectedText = string.Join(Environment.NewLine, lines) + Environment.NewLine;
@@ -1719,6 +1725,8 @@ namespace SshNetTests
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -1739,7 +1747,7 @@ namespace SshNetTests
                     using (var fs = client.OpenRead(remoteFile))
                     {
                         var actualBytes = new byte[fs.Length];
-                        fs.Read(actualBytes, 0, actualBytes.Length);
+                        fs.Read(actualBytes, offset: 0, actualBytes.Length);
                         Assert.IsTrue(expectedBytes.IsEqualTo(actualBytes));
                     }
                 }
@@ -1756,14 +1764,16 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_ReadAllText_NoEncoding_FileDoesNotExist()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
 
+                var remoteFile = GenerateUniqueRemoteFileName();
+
                 if (client.Exists(remoteFile))
+                {
                     client.DeleteFile(remoteFile);
+                }
 
                 try
                 {
@@ -1791,8 +1801,6 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_ReadAllText_Encoding_ExistingFile()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             var encoding = GetRandomEncoding();
             var lines = new[] { "\u0100ert & Ann", "Forever", "&", "\u0116ver" };
             var expectedText = string.Join(Environment.NewLine, lines) + Environment.NewLine;
@@ -1801,6 +1809,8 @@ namespace SshNetTests
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -1821,7 +1831,7 @@ namespace SshNetTests
                     using (var fs = client.OpenRead(remoteFile))
                     {
                         var actualBytes = new byte[fs.Length];
-                        fs.Read(actualBytes, 0, actualBytes.Length);
+                        fs.Read(actualBytes, offset: 0, actualBytes.Length);
                         Assert.IsTrue(expectedBytes.IsEqualTo(actualBytes));
                     }
                 }
@@ -1838,16 +1848,18 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_ReadAllText_Encoding_FileDoesNotExist()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             var encoding = GetRandomEncoding();
 
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
 
+                var remoteFile = GenerateUniqueRemoteFileName();
+
                 if (client.Exists(remoteFile))
+                {
                     client.DeleteFile(remoteFile);
+                }
 
                 try
                 {
@@ -1875,13 +1887,13 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_ReadLines_NoEncoding_ExistingFile()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             var lines = new[] { "\u0100ert & Ann", "Forever", "&", "\u0116ver" };
 
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -1922,11 +1934,11 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_ReadLines_NoEncoding_FileDoesNotExist()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -1959,14 +1971,14 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_ReadLines_Encoding_ExistingFile()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             var encoding = GetRandomEncoding();
             var lines = new[] { "\u0100ert & Ann", "Forever", "&", "\u0116ver" };
 
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -2010,13 +2022,13 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_ReadLines_Encoding_FileDoesNotExist()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             var encoding = GetRandomEncoding();
 
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -2051,7 +2063,7 @@ namespace SshNetTests
         {
             const string remoteFile = "/home/sshnet/directorydoesnotexist/test";
 
-            var content = GenerateRandom(5);
+            var content = GenerateRandom(size: 5);
 
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
@@ -2085,18 +2097,18 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_WriteAllBytes_ExistingFile()
         {
-            const string remoteFile = "/home/sshnet/test";
-
-            var initialContent = GenerateRandom(13);
-            var newContent1 = GenerateRandom(5);
+            var initialContent = GenerateRandom(size: 13);
+            var newContent1 = GenerateRandom(size: 5);
             var expectedContent1 = new ArrayBuilder<byte>().Add(newContent1)
                                                            .Add(initialContent, newContent1.Length, initialContent.Length - newContent1.Length)
                                                            .Build();
-            var newContent2 = GenerateRandom(50000);
+            var newContent2 = GenerateRandom(size: 50000);
 
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -2107,7 +2119,7 @@ namespace SshNetTests
                 {
                     using (var fs = client.Create(remoteFile))
                     {
-                        fs.Write(initialContent, 0, initialContent.Length);
+                        fs.Write(initialContent, offset: 0, initialContent.Length);
                     }
 
                     #region Write less bytes than the current content, overwriting part of that content
@@ -2141,13 +2153,13 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_WriteAllBytes_FileDoesNotExist()
         {
-            const string remoteFile = "/home/sshnet/test";
-
-            var content = GenerateRandom(13);
+            var content = GenerateRandom(size: 13);
 
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -2161,7 +2173,7 @@ namespace SshNetTests
                     using (var fs = client.OpenRead(remoteFile))
                     {
                         var actualBytes = new byte[fs.Length];
-                        fs.Read(actualBytes, 0, actualBytes.Length);
+                        fs.Read(actualBytes, offset: 0, actualBytes.Length);
                         Assert.IsTrue(content.IsEqualTo(actualBytes));
                     }
                 }
@@ -2215,8 +2227,6 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_WriteAllLines_IEnumerable_NoEncoding_ExistingFile()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             var encoding = new UTF8Encoding(false, true);
             var initialContent = "\u0100ert & Ann Forever & Ever Lisa & Sofie";
             var initialContentBytes = GetBytesWithPreamble(initialContent, encoding);
@@ -2237,6 +2247,8 @@ namespace SshNetTests
             {
                 client.Connect();
 
+                var remoteFile = GenerateUniqueRemoteFileName();
+
                 if (client.Exists(remoteFile))
                 {
                     client.DeleteFile(remoteFile);
@@ -2254,7 +2266,7 @@ namespace SshNetTests
                     using (var fs = client.OpenRead(remoteFile))
                     {
                         var actualBytes = new byte[fs.Length];
-                        fs.Read(actualBytes, 0, actualBytes.Length);
+                        fs.Read(actualBytes, offset: 0, actualBytes.Length);
                         Assert.IsTrue(expectedBytes1.IsEqualTo(actualBytes));
                     }
 
@@ -2267,7 +2279,7 @@ namespace SshNetTests
                     using (var fs = client.OpenRead(remoteFile))
                     {
                         var actualBytes = new byte[fs.Length];
-                        fs.Read(actualBytes, 0, actualBytes.Length);
+                        fs.Read(actualBytes, offset: 0, actualBytes.Length);
                         Assert.IsTrue(expectedBytes2.IsEqualTo(actualBytes));
                     }
 
@@ -2286,8 +2298,6 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_WriteAllLines_IEnumerable_NoEncoding_FileDoesNotExist()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             var encoding = new UTF8Encoding(false, true);
             IEnumerable<string> linesToWrite = new[] { "\u0139isa", "&", "Sofie" };
             var linesToWriteBytes = GetBytesWithPreamble(string.Join(Environment.NewLine, linesToWrite) + Environment.NewLine, encoding);
@@ -2295,6 +2305,8 @@ namespace SshNetTests
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -2308,7 +2320,7 @@ namespace SshNetTests
                     using (var fs = client.OpenRead(remoteFile))
                     {
                         var actualBytes = new byte[fs.Length];
-                        fs.Read(actualBytes, 0, actualBytes.Length);
+                        fs.Read(actualBytes, offset: 0, actualBytes.Length);
                         Assert.IsTrue(linesToWriteBytes.IsEqualTo(actualBytes));
                     }
                 }
@@ -2362,8 +2374,6 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_WriteAllLines_IEnumerable_Encoding_ExistingFile()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             var encoding = GetRandomEncoding();
             const string initialContent = "\u0100ert & Ann Forever & Ever Lisa & Sofie";
             var initialContentBytes = GetBytesWithPreamble(initialContent, encoding);
@@ -2383,6 +2393,8 @@ namespace SshNetTests
             {
                 client.Connect();
 
+                var remoteFile = GenerateUniqueRemoteFileName();
+
                 if (client.Exists(remoteFile))
                 {
                     client.DeleteFile(remoteFile);
@@ -2400,7 +2412,7 @@ namespace SshNetTests
                     using (var fs = client.OpenRead(remoteFile))
                     {
                         var actualBytes = new byte[fs.Length];
-                        fs.Read(actualBytes, 0, actualBytes.Length);
+                        fs.Read(actualBytes, offset: 0, actualBytes.Length);
                         Assert.IsTrue(expectedBytes1.IsEqualTo(actualBytes));
                     }
 
@@ -2413,7 +2425,7 @@ namespace SshNetTests
                     using (var fs = client.OpenRead(remoteFile))
                     {
                         var actualBytes = new byte[fs.Length];
-                        fs.Read(actualBytes, 0, actualBytes.Length);
+                        fs.Read(actualBytes, offset: 0, actualBytes.Length);
                         Assert.IsTrue(expectedBytes2.IsEqualTo(actualBytes));
                     }
 
@@ -2432,8 +2444,6 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_WriteAllLines_IEnumerable_Encoding_FileDoesNotExist()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             var encoding = GetRandomEncoding();
             IEnumerable<string> linesToWrite = new[] { "\u0139isa", "&", "Sofie" };
             var linesToWriteBytes = GetBytesWithPreamble(string.Join(Environment.NewLine, linesToWrite) + Environment.NewLine, encoding);
@@ -2441,6 +2451,8 @@ namespace SshNetTests
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -2454,7 +2466,7 @@ namespace SshNetTests
                     using (var fs = client.OpenRead(remoteFile))
                     {
                         var actualBytes = new byte[fs.Length];
-                        fs.Read(actualBytes, 0, actualBytes.Length);
+                        fs.Read(actualBytes, offset: 0, actualBytes.Length);
                         Assert.IsTrue(linesToWriteBytes.IsEqualTo(actualBytes));
                     }
                 }
@@ -2507,8 +2519,6 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_WriteAllLines_Array_NoEncoding_ExistingFile()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             var encoding = new UTF8Encoding(false, true);
             const string initialContent = "\u0100ert & Ann Forever & Ever Lisa & Sofie";
             var initialContentBytes = GetBytesWithPreamble(initialContent, encoding);
@@ -2524,6 +2534,8 @@ namespace SshNetTests
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -2542,7 +2554,7 @@ namespace SshNetTests
                     using (var fs = client.OpenRead(remoteFile))
                     {
                         var actualBytes = new byte[fs.Length];
-                        fs.Read(actualBytes, 0, actualBytes.Length);
+                        fs.Read(actualBytes, offset: 0, actualBytes.Length);
                         Assert.IsTrue(expectedBytes1.IsEqualTo(actualBytes));
                     }
 
@@ -2555,7 +2567,7 @@ namespace SshNetTests
                     using (var fs = client.OpenRead(remoteFile))
                     {
                         var actualBytes = new byte[fs.Length];
-                        fs.Read(actualBytes, 0, actualBytes.Length);
+                        fs.Read(actualBytes, offset: 0, actualBytes.Length);
                         Assert.IsTrue(expectedBytes2.IsEqualTo(actualBytes));
                     }
 
@@ -2574,8 +2586,6 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_WriteAllLines_Array_NoEncoding_FileDoesNotExist()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             var encoding = new UTF8Encoding(false, true);
             var linesToWrite = new[] { "\u0139isa", "&", "Sofie" };
             var linesToWriteBytes = GetBytesWithPreamble(string.Join(Environment.NewLine, linesToWrite) + Environment.NewLine, encoding);
@@ -2583,6 +2593,8 @@ namespace SshNetTests
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -2596,7 +2608,7 @@ namespace SshNetTests
                     using (var fs = client.OpenRead(remoteFile))
                     {
                         var actualBytes = new byte[fs.Length];
-                        fs.Read(actualBytes, 0, actualBytes.Length);
+                        fs.Read(actualBytes, offset: 0, actualBytes.Length);
                         Assert.IsTrue(linesToWriteBytes.IsEqualTo(actualBytes));
                     }
                 }
@@ -2650,10 +2662,9 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_WriteAllLines_Array_Encoding_ExistingFile()
         {
-            const string remoteFile = "/home/sshnet/test";
+            const string initialContent = "\u0100ert & Ann Forever & Ever Lisa & Sofie";
 
             var encoding = GetRandomEncoding();
-            const string initialContent = "\u0100ert & Ann Forever & Ever Lisa & Sofie";
             var initialContentBytes = GetBytesWithPreamble(initialContent, encoding);
             var linesToWrite1 = new[] { "Forever", "&", "\u0116ver" };
             var linesToWrite1Bytes = GetBytesWithPreamble(string.Join(Environment.NewLine, linesToWrite1) + Environment.NewLine, encoding);
@@ -2667,6 +2678,8 @@ namespace SshNetTests
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -2685,7 +2698,7 @@ namespace SshNetTests
                     using (var fs = client.OpenRead(remoteFile))
                     {
                         var actualBytes = new byte[fs.Length];
-                        fs.Read(actualBytes, 0, actualBytes.Length);
+                        fs.Read(actualBytes, offset: 0, actualBytes.Length);
                         Assert.IsTrue(expectedBytes1.IsEqualTo(actualBytes));
                     }
 
@@ -2698,7 +2711,7 @@ namespace SshNetTests
                     using (var fs = client.OpenRead(remoteFile))
                     {
                         var actualBytes = new byte[fs.Length];
-                        fs.Read(actualBytes, 0, actualBytes.Length);
+                        fs.Read(actualBytes, offset: 0, actualBytes.Length);
                         Assert.IsTrue(expectedBytes2.IsEqualTo(actualBytes));
                     }
 
@@ -2717,8 +2730,6 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_WriteAllLines_Array_Encoding_FileDoesNotExist()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             var encoding = GetRandomEncoding();
             var linesToWrite = new[] { "\u0139isa", "&", "Sofie" };
             var linesToWriteBytes = GetBytesWithPreamble(string.Join(Environment.NewLine, linesToWrite) + Environment.NewLine, encoding);
@@ -2726,6 +2737,8 @@ namespace SshNetTests
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -2739,7 +2752,7 @@ namespace SshNetTests
                     using (var fs = client.OpenRead(remoteFile))
                     {
                         var actualBytes = new byte[fs.Length];
-                        fs.Read(actualBytes, 0, actualBytes.Length);
+                        fs.Read(actualBytes, offset: 0, actualBytes.Length);
                         Assert.IsTrue(linesToWriteBytes.IsEqualTo(actualBytes));
                     }
                 }
@@ -2793,12 +2806,11 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_WriteAllText_NoEncoding_ExistingFile()
         {
-            const string remoteFile = "/home/sshnet/test";
+            const string initialContent = "\u0100ert & Ann Forever & \u0116ver Lisa & Sofie";
+            const string newContent1 = "For\u0116ver & Ever";
 
             var encoding = new UTF8Encoding(false, true);
-            const string initialContent = "\u0100ert & Ann Forever & \u0116ver Lisa & Sofie";
             var initialContentBytes = GetBytesWithPreamble(initialContent, encoding);
-            const string newContent1 = "For\u0116ver & Ever";
             var newContent1Bytes = GetBytesWithPreamble(newContent1, encoding);
             var expectedBytes1 = new ArrayBuilder<byte>().Add(newContent1Bytes)
                                                          .Add(initialContentBytes, newContent1Bytes.Length, initialContentBytes.Length - newContent1Bytes.Length)
@@ -2810,6 +2822,8 @@ namespace SshNetTests
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -2827,7 +2841,7 @@ namespace SshNetTests
                     using (var fs = client.OpenRead(remoteFile))
                     {
                         var actualBytes = new byte[fs.Length];
-                        fs.Read(actualBytes, 0, actualBytes.Length);
+                        fs.Read(actualBytes, offset: 0, actualBytes.Length);
                         Assert.IsTrue(expectedBytes1.IsEqualTo(actualBytes));
                     }
 
@@ -2840,7 +2854,7 @@ namespace SshNetTests
                     using (var fs = client.OpenRead(remoteFile))
                     {
                         var actualBytes = new byte[fs.Length];
-                        fs.Read(actualBytes, 0, actualBytes.Length);
+                        fs.Read(actualBytes, offset: 0, actualBytes.Length);
                         Assert.IsTrue(expectedBytes2.IsEqualTo(actualBytes));
                     }
 
@@ -2859,15 +2873,16 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_WriteAllText_NoEncoding_FileDoesNotExist()
         {
-            const string remoteFile = "/home/sshnet/test";
+            const string initialContent = "\u0100ert & Ann Forever & \u0116ver Lisa & Sofie";
 
             var encoding = new UTF8Encoding(false, true);
-            const string initialContent = "\u0100ert & Ann Forever & \u0116ver Lisa & Sofie";
             var initialContentBytes = GetBytesWithPreamble(initialContent, encoding);
 
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -2881,7 +2896,7 @@ namespace SshNetTests
                     using (var fs = client.OpenRead(remoteFile))
                     {
                         var actualBytes = new byte[fs.Length];
-                        fs.Read(actualBytes, 0, actualBytes.Length);
+                        fs.Read(actualBytes, offset: 0, actualBytes.Length);
                         Assert.IsTrue(initialContentBytes.IsEqualTo(actualBytes));
                     }
                 }
@@ -2935,23 +2950,24 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_WriteAllText_Encoding_ExistingFile()
         {
-            const string remoteFile = "/home/sshnet/test";
+            const string initialContent = "\u0100ert & Ann Forever & \u0116ver Lisa & Sofie";
+            const string newContent1 = "For\u0116ver & Ever";
+            const string newContent2 = "Sofie & Lisa For\u0116ver & Ever with \u0100ert & Ann";
 
             var encoding = GetRandomEncoding();
-            const string initialContent = "\u0100ert & Ann Forever & \u0116ver Lisa & Sofie";
             var initialContentBytes = GetBytesWithPreamble(initialContent, encoding);
-            const string newContent1 = "For\u0116ver & Ever";
             var newContent1Bytes = GetBytesWithPreamble(newContent1, encoding);
             var expectedBytes1 = new ArrayBuilder<byte>().Add(newContent1Bytes)
                                                          .Add(initialContentBytes, newContent1Bytes.Length, initialContentBytes.Length - newContent1Bytes.Length)
                                                          .Build();
-            const string newContent2 = "Sofie & Lisa For\u0116ver & Ever with \u0100ert & Ann";
             var newContent2Bytes = GetBytesWithPreamble(newContent2, encoding);
             var expectedBytes2 = newContent2Bytes;
 
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -2969,7 +2985,7 @@ namespace SshNetTests
                     using (var fs = client.OpenRead(remoteFile))
                     {
                         var actualBytes = new byte[fs.Length];
-                        fs.Read(actualBytes, 0, actualBytes.Length);
+                        fs.Read(actualBytes, offset: 0, actualBytes.Length);
                         Assert.IsTrue(expectedBytes1.IsEqualTo(actualBytes));
                     }
 
@@ -2982,7 +2998,7 @@ namespace SshNetTests
                     using (var fs = client.OpenRead(remoteFile))
                     {
                         var actualBytes = new byte[fs.Length];
-                        fs.Read(actualBytes, 0, actualBytes.Length);
+                        fs.Read(actualBytes, offset: 0, actualBytes.Length);
                         Assert.IsTrue(expectedBytes2.IsEqualTo(actualBytes));
                     }
 
@@ -3001,15 +3017,16 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_WriteAllText_Encoding_FileDoesNotExist()
         {
-            const string remoteFile = "/home/sshnet/test";
+            const string initialContent = "\u0100ert & Ann Forever & \u0116ver Lisa & Sofie";
 
             var encoding = GetRandomEncoding();
-            const string initialContent = "\u0100ert & Ann Forever & \u0116ver Lisa & Sofie";
             var initialContentBytes = GetBytesWithPreamble(initialContent, encoding);
 
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -3023,7 +3040,7 @@ namespace SshNetTests
                     using (var fs = client.OpenRead(remoteFile))
                     {
                         var actualBytes = new byte[fs.Length];
-                        fs.Read(actualBytes, 0, actualBytes.Length);
+                        fs.Read(actualBytes, offset: 0, actualBytes.Length);
                         Assert.IsTrue(initialContentBytes.IsEqualTo(actualBytes));
                     }
                 }
@@ -3040,11 +3057,11 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_BeginDownloadFile_FileDoesNotExist()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -3156,11 +3173,11 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_BeginUploadFile_InputAndPath_FileDoesNotExist()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -3204,11 +3221,11 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_BeginUploadFile_InputAndPath_ExistingFile()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -3290,11 +3307,11 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_BeginUploadFile_InputAndPathAndCanOverride_CanOverrideIsFalse_FileDoesNotExist()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -3340,11 +3357,11 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_BeginUploadFile_InputAndPathAndCanOverride_CanOverrideIsFalse_ExistingFile()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -3425,11 +3442,11 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_BeginUploadFile_InputAndPathAndCanOverride_CanOverrideIsTrue_FileDoesNotExist()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -3475,11 +3492,11 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_BeginUploadFile_InputAndPathAndCanOverride_CanOverrideIsTrue_ExistingFile()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -3528,11 +3545,12 @@ namespace SshNetTests
         public void Sftp_UploadAndDownloadBigFile()
         {
             const int size = 50 * 1024 * 1024;
-            const string remoteFile = "/home/sshnet/test";
 
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -3909,12 +3927,13 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_DownloadFile_MemoryStream()
         {
-            const string remoteFile = "/home/sshnet/test";
             const int fileSize = 500 * 1024;
 
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 SftpCreateRemoteFile(client, remoteFile, fileSize);
 
@@ -3995,11 +4014,11 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_SftpFileStream_ReadAndWrite()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -4032,9 +4051,11 @@ namespace SshNetTests
                         Assert.AreEqual(6, s.Length);
 
                         var buffer = new byte[s.Length];
-                        Assert.AreEqual(6, s.Read(buffer, 0, buffer.Length));
+                        Assert.AreEqual(6, s.Read(buffer, offset: 0, buffer.Length));
 
                         CollectionAssert.AreEqual(new byte[] { 4, 3, 7, 9, 10, 11 }, buffer);
+
+                        // Ensure we've reached end of the stream
                         Assert.AreEqual(-1, s.ReadByte());
                     }
 
@@ -4049,6 +4070,8 @@ namespace SshNetTests
                         s.Write(new byte[] { 0, 1, 6, 4 }, 1, 2);
 
                         Assert.AreEqual(11, s.ReadByte());
+
+                        // Ensure we've reached end of the stream
                         Assert.AreEqual(-1, s.ReadByte());
 
                         s.WriteByte(12);
@@ -4069,9 +4092,11 @@ namespace SshNetTests
                         Assert.AreEqual(7, s.Length);
 
                         var buffer = new byte[s.Length];
-                        Assert.AreEqual(7, s.Read(buffer, 0, buffer.Length));
+                        Assert.AreEqual(7, s.Read(buffer, offset: 0, buffer.Length));
 
                         CollectionAssert.AreEqual(new byte[] { 5, 3, 13, 1, 6, 11, 12 }, buffer);
+
+                        // Ensure we've reached end of the stream
                         Assert.AreEqual(-1, s.ReadByte());
                     }
                 }
@@ -4088,39 +4113,41 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_SftpFileStream_SetLength_ReduceLength()
         {
-            const string path = "/home/sshnet/test";
-
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
 
-                if (client.Exists(path))
+                var remoteFile = GenerateUniqueRemoteFileName();
+
+                if (client.Exists(remoteFile))
                 {
-                    client.DeleteFile(path);
+                    client.DeleteFile(remoteFile);
                 }
 
                 try
                 {
-                    using (var s = client.Open(path, FileMode.CreateNew, FileAccess.Write))
+                    using (var s = client.Open(remoteFile, FileMode.CreateNew, FileAccess.Write))
                     {
                         s.Write(new byte[] { 5, 4, 3, 2, 1 }, 1, 3);
                     }
 
                     // reduce length while in write mode, with data in write buffer, and before
                     // current position
-                    using (var s = client.Open(path, FileMode.Append, FileAccess.Write))
+                    using (var s = client.Open(remoteFile, FileMode.Append, FileAccess.Write))
                     {
                         s.Position = 3;
-                        s.Write(new byte[] { 6, 7, 8, 9 }, 0, 4);
+                        s.Write(new byte[] { 6, 7, 8, 9 }, offset: 0, count: 4);
 
                         Assert.AreEqual(7, s.Position);
 
                         // verify buffer has not yet been flushed
-                        using (var fs = client.Open(path, FileMode.Open, FileAccess.Read))
+                        using (var fs = client.Open(remoteFile, FileMode.Open, FileAccess.Read))
                         {
                             Assert.AreEqual(4, fs.ReadByte());
                             Assert.AreEqual(3, fs.ReadByte());
                             Assert.AreEqual(2, fs.ReadByte());
+
+                            // Ensure we've reached end of the stream
                             Assert.AreEqual(-1, fs.ReadByte());
                         }
 
@@ -4129,13 +4156,15 @@ namespace SshNetTests
                         Assert.AreEqual(5, s.Position);
 
                         // verify that buffer was flushed and size has been modified
-                        using (var fs = client.Open(path, FileMode.Open, FileAccess.Read))
+                        using (var fs = client.Open(remoteFile, FileMode.Open, FileAccess.Read))
                         {
                             Assert.AreEqual(4, fs.ReadByte());
                             Assert.AreEqual(3, fs.ReadByte());
                             Assert.AreEqual(2, fs.ReadByte());
                             Assert.AreEqual(6, fs.ReadByte());
                             Assert.AreEqual(7, fs.ReadByte());
+
+                            // Ensure we've reached end of the stream
                             Assert.AreEqual(-1, fs.ReadByte());
                         }
 
@@ -4143,30 +4172,32 @@ namespace SshNetTests
                     }
 
                     // verify that last byte was correctly written to the file
-                    using (var s = client.Open(path, FileMode.Open, FileAccess.Read))
+                    using (var s = client.Open(remoteFile, FileMode.Open, FileAccess.Read))
                     {
                         Assert.AreEqual(6, s.Length);
 
                         var buffer = new byte[s.Length + 2];
-                        Assert.AreEqual(6, s.Read(buffer, 0, buffer.Length));
+                        Assert.AreEqual(6, s.Read(buffer, offset: 0, buffer.Length));
 
                         CollectionAssert.AreEqual(new byte[] { 4, 3, 2, 6, 7, 1, 0, 0 }, buffer);
+
+                        // Ensure we've reached end of the stream
                         Assert.AreEqual(-1, s.ReadByte());
                     }
 
                     // reduce length while in read mode, but beyond current position
-                    using (var s = client.Open(path, FileMode.Open, FileAccess.ReadWrite))
+                    using (var s = client.Open(remoteFile, FileMode.Open, FileAccess.ReadWrite))
                     {
                         var buffer = new byte[1];
-                        Assert.AreEqual(1, s.Read(buffer, 0, buffer.Length));
+                        Assert.AreEqual(1, s.Read(buffer, offset: 0, buffer.Length));
 
                         CollectionAssert.AreEqual(new byte[] { 4 }, buffer);
 
                         s.SetLength(3);
 
-                        using (var w = client.Open(path, FileMode.Open, FileAccess.Write))
+                        using (var w = client.Open(remoteFile, FileMode.Open, FileAccess.Write))
                         {
-                            w.Write(new byte[] { 8, 1, 6, 2 }, 0, 4);
+                            w.Write(new byte[] { 8, 1, 6, 2 }, offset: 0, count: 4);
                         }
 
                         // verify that position was not changed
@@ -4176,16 +4207,18 @@ namespace SshNetTests
                         Assert.AreEqual(1, s.ReadByte());
                         Assert.AreEqual(6, s.ReadByte());
                         Assert.AreEqual(2, s.ReadByte());
+
+                        // Ensure we've reached end of the stream
                         Assert.AreEqual(-1, s.ReadByte());
 
                         Assert.AreEqual(4, s.Length);
                     }
 
                     // reduce length while in read mode, but before current position
-                    using (var s = client.Open(path, FileMode.Open, FileAccess.ReadWrite))
+                    using (var s = client.Open(remoteFile, FileMode.Open, FileAccess.ReadWrite))
                     {
                         var buffer = new byte[4];
-                        Assert.AreEqual(4, s.Read(buffer, 0, buffer.Length));
+                        Assert.AreEqual(4, s.Read(buffer, offset: 0, buffer.Length));
 
                         CollectionAssert.AreEqual(new byte[] { 8, 1, 6, 2 }, buffer);
 
@@ -4196,24 +4229,27 @@ namespace SshNetTests
                         // verify that position was moved to last byte
                         Assert.AreEqual(3, s.Position);
 
-                        using (var w = client.Open(path, FileMode.Open, FileAccess.Read))
+                        using (var w = client.Open(remoteFile, FileMode.Open, FileAccess.Read))
                         {
                             Assert.AreEqual(3, w.Length);
 
                             Assert.AreEqual(8, w.ReadByte());
                             Assert.AreEqual(1, w.ReadByte());
                             Assert.AreEqual(6, w.ReadByte());
+
+                            // Ensure we've reached end of the stream
                             Assert.AreEqual(-1, w.ReadByte());
                         }
 
+                        // Ensure we've reached end of the stream
                         Assert.AreEqual(-1, s.ReadByte());
                     }
                 }
                 finally
                 {
-                    if (client.Exists(path))
+                    if (client.Exists(remoteFile))
                     {
-                        client.DeleteFile(path);
+                        client.DeleteFile(remoteFile);
                     }
                 }
             }
@@ -4222,12 +4258,12 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_SftpFileStream_Seek_BeyondEndOfFile_SeekOriginBegin()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.BufferSize = 500;
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -4246,16 +4282,18 @@ namespace SshNetTests
                     // do not write anything
                     using (var fs = client.OpenWrite(remoteFile))
                     {
-                        var newPosition = fs.Seek(3L, SeekOrigin.Begin);
+                        var newPosition = fs.Seek(offset: 3L, SeekOrigin.Begin);
 
                         Assert.AreEqual(3, newPosition);
-                        Assert.AreEqual(newPosition, fs.Position);
+                        Assert.AreEqual(3, fs.Position);
                     }
 
                     using (var fs = client.OpenRead(remoteFile))
                     {
                         Assert.AreEqual(1, fs.Length);
                         Assert.AreEqual(0x04, fs.ReadByte());
+
+                        // Ensure we've reached end of the stream
                         Assert.AreEqual(-1, fs.ReadByte());
                     }
 
@@ -4271,16 +4309,18 @@ namespace SshNetTests
                     // do not write anything
                     using (var fs = client.OpenWrite(remoteFile))
                     {
-                        var newPosition = fs.Seek(700L, SeekOrigin.Begin);
+                        var newPosition = fs.Seek(offset: 700L, SeekOrigin.Begin);
 
                         Assert.AreEqual(700, newPosition);
-                        Assert.AreEqual(newPosition, fs.Position);
+                        Assert.AreEqual(700, fs.Position);
                     }
 
                     using (var fs = client.OpenRead(remoteFile))
                     {
                         Assert.AreEqual(1, fs.Length);
                         Assert.AreEqual(0x04, fs.ReadByte());
+
+                        // Ensure we've reached end of the stream
                         Assert.AreEqual(-1, fs.ReadByte());
                     }
 
@@ -4295,16 +4335,18 @@ namespace SshNetTests
                     // seek beyond EOF but not beyond buffer size
                     // write less bytes than buffer size
                     var seekOffset = 3L;
-                    var writeBuffer = GenerateRandom(7);
+
+                    // buffer holding the data that we'll write to the file
+                    var writeBuffer = GenerateRandom(size: 7);
 
                     using (var fs = client.OpenWrite(remoteFile))
                     {
                         var newPosition = fs.Seek(seekOffset, SeekOrigin.Begin);
 
                         Assert.AreEqual(seekOffset, newPosition);
-                        Assert.AreEqual(newPosition, fs.Position);
+                        Assert.AreEqual(seekOffset, fs.Position);
 
-                        fs.Write(writeBuffer, 0, writeBuffer.Length);
+                        fs.Write(writeBuffer, offset: 0, writeBuffer.Length);
                     }
 
                     using (var fs = client.OpenRead(remoteFile))
@@ -4312,14 +4354,15 @@ namespace SshNetTests
                         Assert.AreEqual(seekOffset + writeBuffer.Length, fs.Length);
                         Assert.AreEqual(0x04, fs.ReadByte());
 
-                        var emptyBuffer = new byte[seekOffset - 1];
-                        Assert.AreEqual(emptyBuffer.Length, fs.Read(emptyBuffer, 0, emptyBuffer.Length));
-                        Assert.IsTrue(new byte[emptyBuffer.Length].IsEqualTo(emptyBuffer));
+                        var soughtOverReadBufferffer = new byte[seekOffset - 1];
+                        Assert.AreEqual(soughtOverReadBufferffer.Length, fs.Read(soughtOverReadBufferffer, offset: 0, soughtOverReadBufferffer.Length));
+                        Assert.IsTrue(new byte[soughtOverReadBufferffer.Length].IsEqualTo(soughtOverReadBufferffer));
 
                         var readBuffer = new byte[writeBuffer.Length];
-                        Assert.AreEqual(readBuffer.Length, fs.Read(readBuffer, 0, readBuffer.Length));
+                        Assert.AreEqual(readBuffer.Length, fs.Read(readBuffer, offset: 0, readBuffer.Length));
                         Assert.IsTrue(writeBuffer.IsEqualTo(readBuffer));
 
+                        // Ensure we've reached end of the stream
                         Assert.AreEqual(-1, fs.ReadByte());
                     }
 
@@ -4334,16 +4377,18 @@ namespace SshNetTests
                     // seek beyond EOF and beyond buffer size
                     // write less bytes than buffer size
                     seekOffset = 700L;
-                    writeBuffer = GenerateRandom(4);
+
+                    // buffer holding the data that we'll write to the file
+                    writeBuffer = GenerateRandom(size: 4);
 
                     using (var fs = client.OpenWrite(remoteFile))
                     {
                         var newPosition = fs.Seek(seekOffset, SeekOrigin.Begin);
 
                         Assert.AreEqual(seekOffset, newPosition);
-                        Assert.AreEqual(newPosition, fs.Position);
+                        Assert.AreEqual(seekOffset, fs.Position);
 
-                        fs.Write(writeBuffer, 0, writeBuffer.Length);
+                        fs.Write(writeBuffer, offset: 0, writeBuffer.Length);
                     }
 
                     using (var fs = client.OpenRead(remoteFile))
@@ -4351,14 +4396,15 @@ namespace SshNetTests
                         Assert.AreEqual(seekOffset + writeBuffer.Length, fs.Length);
                         Assert.AreEqual(0x04, fs.ReadByte());
 
-                        var emptyBuffer = new byte[seekOffset - 1];
-                        Assert.AreEqual(emptyBuffer.Length, fs.Read(emptyBuffer, 0, emptyBuffer.Length));
-                        Assert.IsTrue(new byte[emptyBuffer.Length].IsEqualTo(emptyBuffer));
+                        var soughtOverReadBufferffer = new byte[seekOffset - 1];
+                        Assert.AreEqual(soughtOverReadBufferffer.Length, fs.Read(soughtOverReadBufferffer, offset: 0, soughtOverReadBufferffer.Length));
+                        Assert.IsTrue(new byte[soughtOverReadBufferffer.Length].IsEqualTo(soughtOverReadBufferffer));
 
                         var readBuffer = new byte[writeBuffer.Length];
-                        Assert.AreEqual(readBuffer.Length, fs.Read(readBuffer, 0, readBuffer.Length));
+                        Assert.AreEqual(readBuffer.Length, fs.Read(readBuffer, offset: 0, readBuffer.Length));
                         Assert.IsTrue(writeBuffer.IsEqualTo(readBuffer));
 
+                        // Ensure we've reached end of the stream
                         Assert.AreEqual(-1, fs.ReadByte());
                     }
 
@@ -4372,16 +4418,16 @@ namespace SshNetTests
 
                     // seek beyond EOF but not beyond buffer size
                     // write more bytes than buffer size
-                    writeBuffer = GenerateRandom(600);
+                    writeBuffer = GenerateRandom(size: 600);
 
                     using (var fs = client.OpenWrite(remoteFile))
                     {
-                        var newPosition = fs.Seek(3L, SeekOrigin.Begin);
+                        var newPosition = fs.Seek(offset: 3L, SeekOrigin.Begin);
 
                         Assert.AreEqual(3, newPosition);
-                        Assert.AreEqual(newPosition, fs.Position);
+                        Assert.AreEqual(3, fs.Position);
 
-                        fs.Write(writeBuffer, 0, writeBuffer.Length);
+                        fs.Write(writeBuffer, offset: 0, writeBuffer.Length);
                     }
 
                     using (var fs = client.OpenRead(remoteFile))
@@ -4392,9 +4438,10 @@ namespace SshNetTests
                         Assert.AreEqual(0x00, fs.ReadByte());
 
                         var readBuffer = new byte[writeBuffer.Length];
-                        Assert.AreEqual(writeBuffer.Length, fs.Read(readBuffer, 0, readBuffer.Length));
+                        Assert.AreEqual(writeBuffer.Length, fs.Read(readBuffer, offset: 0, readBuffer.Length));
                         Assert.IsTrue(writeBuffer.IsEqualTo(readBuffer));
 
+                        // Ensure we've reached end of the stream
                         Assert.AreEqual(-1, fs.ReadByte());
                     }
 
@@ -4408,16 +4455,16 @@ namespace SshNetTests
 
                     // seek beyond EOF and beyond buffer size
                     // write more bytes than buffer size
-                    writeBuffer = GenerateRandom(600);
+                    writeBuffer = GenerateRandom(size: 600);
 
                     using (var fs = client.OpenWrite(remoteFile))
                     {
-                        var newPosition = fs.Seek(550, SeekOrigin.Begin);
+                        var newPosition = fs.Seek(offset: 550, SeekOrigin.Begin);
 
                         Assert.AreEqual(550, newPosition);
-                        Assert.AreEqual(newPosition, fs.Position);
+                        Assert.AreEqual(550, fs.Position);
 
-                        fs.Write(writeBuffer, 0, writeBuffer.Length);
+                        fs.Write(writeBuffer, offset: 0, writeBuffer.Length);
                     }
 
                     using (var fs = client.OpenRead(remoteFile))
@@ -4426,14 +4473,15 @@ namespace SshNetTests
 
                         Assert.AreEqual(0x04, fs.ReadByte());
 
-                        var emptyBuffer = new byte[550 - 1];
-                        Assert.AreEqual(550 - 1, fs.Read(emptyBuffer, 0, emptyBuffer.Length));
-                        Assert.IsTrue(new byte[550 - 1].IsEqualTo(emptyBuffer));
+                        var soughtOverReadBuffer = new byte[550 - 1];
+                        Assert.AreEqual(550 - 1, fs.Read(soughtOverReadBuffer, offset: 0, soughtOverReadBuffer.Length));
+                        Assert.IsTrue(new byte[550 - 1].IsEqualTo(soughtOverReadBuffer));
 
                         var readBuffer = new byte[writeBuffer.Length];
-                        Assert.AreEqual(writeBuffer.Length, fs.Read(readBuffer, 0, readBuffer.Length));
+                        Assert.AreEqual(writeBuffer.Length, fs.Read(readBuffer, offset: 0, readBuffer.Length));
                         Assert.IsTrue(writeBuffer.IsEqualTo(readBuffer));
 
+                        // Ensure we've reached end of the stream
                         Assert.AreEqual(-1, fs.ReadByte());
                     }
                 }
@@ -4450,12 +4498,12 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_SftpFileStream_Seek_BeyondEndOfFile_SeekOriginEnd()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.BufferSize = 500;
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -4474,16 +4522,18 @@ namespace SshNetTests
                     // do not write anything
                     using (var fs = client.OpenWrite(remoteFile))
                     {
-                        var newPosition = fs.Seek(3L, SeekOrigin.End);
+                        var newPosition = fs.Seek(offset: 3L, SeekOrigin.End);
 
                         Assert.AreEqual(4, newPosition);
-                        Assert.AreEqual(newPosition, fs.Position);
+                        Assert.AreEqual(4, fs.Position);
                     }
 
                     using (var fs = client.OpenRead(remoteFile))
                     {
                         Assert.AreEqual(1, fs.Length);
                         Assert.AreEqual(0x04, fs.ReadByte());
+
+                        // Ensure we've reached end of the stream
                         Assert.AreEqual(-1, fs.ReadByte());
                     }
 
@@ -4499,16 +4549,18 @@ namespace SshNetTests
                     // do not write anything
                     using (var fs = client.OpenWrite(remoteFile))
                     {
-                        var newPosition = fs.Seek(700L, SeekOrigin.End);
+                        var newPosition = fs.Seek(offset: 700L, SeekOrigin.End);
 
                         Assert.AreEqual(701, newPosition);
-                        Assert.AreEqual(newPosition, fs.Position);
+                        Assert.AreEqual(701, fs.Position);
                     }
 
                     using (var fs = client.OpenRead(remoteFile))
                     {
                         Assert.AreEqual(1, fs.Length);
                         Assert.AreEqual(0x04, fs.ReadByte());
+
+                        // Ensure we've reached end of the stream
                         Assert.AreEqual(-1, fs.ReadByte());
                     }
 
@@ -4523,16 +4575,18 @@ namespace SshNetTests
                     // seek beyond EOF but not beyond buffer size
                     // write less bytes than buffer size
                     var seekOffset = 3L;
-                    var writeBuffer = GenerateRandom(7);
+
+                    // buffer holding the data that we'll write to the file
+                    var writeBuffer = GenerateRandom(size: 7);
 
                     using (var fs = client.OpenWrite(remoteFile))
                     {
                         var newPosition = fs.Seek(seekOffset, SeekOrigin.End);
 
                         Assert.AreEqual(4, newPosition);
-                        Assert.AreEqual(newPosition, fs.Position);
+                        Assert.AreEqual(4, fs.Position);
 
-                        fs.Write(writeBuffer, 0, writeBuffer.Length);
+                        fs.Write(writeBuffer, offset: 0, writeBuffer.Length);
                     }
 
                     using (var fs = client.OpenRead(remoteFile))
@@ -4540,14 +4594,15 @@ namespace SshNetTests
                         Assert.AreEqual(1 + seekOffset + writeBuffer.Length, fs.Length);
                         Assert.AreEqual(0x04, fs.ReadByte());
 
-                        var emptyBuffer = new byte[seekOffset];
-                        Assert.AreEqual(emptyBuffer.Length, fs.Read(emptyBuffer, 0, emptyBuffer.Length));
-                        Assert.IsTrue(new byte[emptyBuffer.Length].IsEqualTo(emptyBuffer));
+                        var soughtOverReadBuffer = new byte[seekOffset];
+                        Assert.AreEqual(soughtOverReadBuffer.Length, fs.Read(soughtOverReadBuffer, offset: 0, soughtOverReadBuffer.Length));
+                        Assert.IsTrue(new byte[soughtOverReadBuffer.Length].IsEqualTo(soughtOverReadBuffer));
 
                         var readBuffer = new byte[writeBuffer.Length];
-                        Assert.AreEqual(readBuffer.Length, fs.Read(readBuffer, 0, readBuffer.Length));
+                        Assert.AreEqual(readBuffer.Length, fs.Read(readBuffer, offset: 0, readBuffer.Length));
                         Assert.IsTrue(writeBuffer.IsEqualTo(readBuffer));
 
+                        // Ensure we've reached end of the stream
                         Assert.AreEqual(-1, fs.ReadByte());
                     }
 
@@ -4562,16 +4617,18 @@ namespace SshNetTests
                     // seek beyond EOF and beyond buffer size
                     // write less bytes than buffer size
                     seekOffset = 700L;
-                    writeBuffer = GenerateRandom(4);
+
+                    // buffer holding the data that we'll write to the file
+                    writeBuffer = GenerateRandom(size: 4);
 
                     using (var fs = client.OpenWrite(remoteFile))
                     {
                         var newPosition = fs.Seek(seekOffset, SeekOrigin.End);
 
                         Assert.AreEqual(1 + seekOffset, newPosition);
-                        Assert.AreEqual(newPosition, fs.Position);
+                        Assert.AreEqual(1 + seekOffset, fs.Position);
 
-                        fs.Write(writeBuffer, 0, writeBuffer.Length);
+                        fs.Write(writeBuffer, offset: 0, writeBuffer.Length);
                     }
 
                     using (var fs = client.OpenRead(remoteFile))
@@ -4579,14 +4636,15 @@ namespace SshNetTests
                         Assert.AreEqual(1 + seekOffset + writeBuffer.Length, fs.Length);
                         Assert.AreEqual(0x04, fs.ReadByte());
 
-                        var emptyBuffer = new byte[seekOffset];
-                        Assert.AreEqual(emptyBuffer.Length, fs.Read(emptyBuffer, 0, emptyBuffer.Length));
-                        Assert.IsTrue(new byte[emptyBuffer.Length].IsEqualTo(emptyBuffer));
+                        var soughtOverReadBuffer = new byte[seekOffset];
+                        Assert.AreEqual(soughtOverReadBuffer.Length, fs.Read(soughtOverReadBuffer, offset: 0, soughtOverReadBuffer.Length));
+                        Assert.IsTrue(new byte[soughtOverReadBuffer.Length].IsEqualTo(soughtOverReadBuffer));
 
                         var readBuffer = new byte[writeBuffer.Length];
-                        Assert.AreEqual(readBuffer.Length, fs.Read(readBuffer, 0, readBuffer.Length));
+                        Assert.AreEqual(readBuffer.Length, fs.Read(readBuffer, offset: 0, readBuffer.Length));
                         Assert.IsTrue(writeBuffer.IsEqualTo(readBuffer));
 
+                        // Ensure we've reached end of the stream
                         Assert.AreEqual(-1, fs.ReadByte());
                     }
 
@@ -4601,16 +4659,16 @@ namespace SshNetTests
                     // seek beyond EOF but not beyond buffer size
                     // write more bytes than buffer size
                     seekOffset = 3L;
-                    writeBuffer = GenerateRandom(600);
+                    writeBuffer = GenerateRandom(size: 600);
 
                     using (var fs = client.OpenWrite(remoteFile))
                     {
                         var newPosition = fs.Seek(seekOffset, SeekOrigin.End);
 
                         Assert.AreEqual(1 + seekOffset, newPosition);
-                        Assert.AreEqual(newPosition, fs.Position);
+                        Assert.AreEqual(1 + seekOffset, fs.Position);
 
-                        fs.Write(writeBuffer, 0, writeBuffer.Length);
+                        fs.Write(writeBuffer, offset: 0, writeBuffer.Length);
                     }
 
                     using (var fs = client.OpenRead(remoteFile))
@@ -4618,14 +4676,15 @@ namespace SshNetTests
                         Assert.AreEqual(1 + seekOffset + writeBuffer.Length, fs.Length);
                         Assert.AreEqual(0x04, fs.ReadByte());
 
-                        var emptyBuffer = new byte[seekOffset];
-                        Assert.AreEqual(emptyBuffer.Length, fs.Read(emptyBuffer, 0, emptyBuffer.Length));
-                        Assert.IsTrue(new byte[emptyBuffer.Length].IsEqualTo(emptyBuffer));
+                        var soughtOverReadBuffer = new byte[seekOffset];
+                        Assert.AreEqual(soughtOverReadBuffer.Length, fs.Read(soughtOverReadBuffer, offset: 0, soughtOverReadBuffer.Length));
+                        Assert.IsTrue(new byte[soughtOverReadBuffer.Length].IsEqualTo(soughtOverReadBuffer));
 
                         var readBuffer = new byte[writeBuffer.Length];
-                        Assert.AreEqual(writeBuffer.Length, fs.Read(readBuffer, 0, readBuffer.Length));
+                        Assert.AreEqual(writeBuffer.Length, fs.Read(readBuffer, offset: 0, readBuffer.Length));
                         Assert.IsTrue(writeBuffer.IsEqualTo(readBuffer));
 
+                        // Ensure we've reached end of the stream
                         Assert.AreEqual(-1, fs.ReadByte());
                     }
 
@@ -4640,16 +4699,16 @@ namespace SshNetTests
                     // seek beyond EOF and beyond buffer size
                     // write more bytes than buffer size
                     seekOffset = 550L;
-                    writeBuffer = GenerateRandom(600);
+                    writeBuffer = GenerateRandom(size: 600);
 
                     using (var fs = client.OpenWrite(remoteFile))
                     {
                         var newPosition = fs.Seek(seekOffset, SeekOrigin.End);
 
                         Assert.AreEqual(1 + seekOffset, newPosition);
-                        Assert.AreEqual(newPosition, fs.Position);
+                        Assert.AreEqual(1 + seekOffset, fs.Position);
 
-                        fs.Write(writeBuffer, 0, writeBuffer.Length);
+                        fs.Write(writeBuffer, offset: 0, writeBuffer.Length);
                     }
 
                     using (var fs = client.OpenRead(remoteFile))
@@ -4658,14 +4717,15 @@ namespace SshNetTests
 
                         Assert.AreEqual(0x04, fs.ReadByte());
 
-                        var emptyBuffer = new byte[seekOffset];
-                        Assert.AreEqual(emptyBuffer.Length, fs.Read(emptyBuffer, 0, emptyBuffer.Length));
-                        Assert.IsTrue(new byte[emptyBuffer.Length].IsEqualTo(emptyBuffer));
+                        var soughtOverReadBuffer = new byte[seekOffset];
+                        Assert.AreEqual(soughtOverReadBuffer.Length, fs.Read(soughtOverReadBuffer, offset: 0, soughtOverReadBuffer.Length));
+                        Assert.IsTrue(new byte[soughtOverReadBuffer.Length].IsEqualTo(soughtOverReadBuffer));
 
                         var readBuffer = new byte[writeBuffer.Length];
-                        Assert.AreEqual(writeBuffer.Length, fs.Read(readBuffer, 0, readBuffer.Length));
+                        Assert.AreEqual(writeBuffer.Length, fs.Read(readBuffer, offset: 0, readBuffer.Length));
                         Assert.IsTrue(writeBuffer.IsEqualTo(readBuffer));
 
+                        // Ensure we've reached end of the stream
                         Assert.AreEqual(-1, fs.ReadByte());
                     }
                 }
@@ -4682,12 +4742,12 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_SftpFileStream_Seek_NegativeOffSet_SeekOriginEnd()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.BufferSize = 500;
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -4707,10 +4767,10 @@ namespace SshNetTests
                     // do not write anything
                     using (var fs = client.OpenWrite(remoteFile))
                     {
-                        var newPosition = fs.Seek(-2L, SeekOrigin.End);
+                        var newPosition = fs.Seek(offset: -2L, SeekOrigin.End);
 
                         Assert.AreEqual(1, newPosition);
-                        Assert.AreEqual(newPosition, fs.Position);
+                        Assert.AreEqual(1, fs.Position);
                     }
 
                     using (var fs = client.OpenRead(remoteFile))
@@ -4719,26 +4779,29 @@ namespace SshNetTests
                         Assert.AreEqual(0x04, fs.ReadByte());
                         Assert.AreEqual(0x07, fs.ReadByte());
                         Assert.AreEqual(0x05, fs.ReadByte());
+
+                        // Ensure we've reached end of the stream
                         Assert.AreEqual(-1, fs.ReadByte());
                     }
 
                     client.DeleteFile(remoteFile);
 
-                    var writeBuffer = GenerateRandom((int) client.BufferSize + 200);
+                    // buffer holding the data that we'll write to the file
+                    var writeBuffer = GenerateRandom(size: (int) client.BufferSize + 200);
 
                     using (var fs = client.OpenWrite(remoteFile))
                     {
-                        fs.Write(writeBuffer, 0, writeBuffer.Length);
+                        fs.Write(writeBuffer, offset: 0, writeBuffer.Length);
                     }
 
                     // seek within EOF and beyond buffer size
                     // do not write anything
                     using (var fs = client.OpenWrite(remoteFile))
                     {
-                        var newPosition = fs.Seek(-100L, SeekOrigin.End);
+                        var newPosition = fs.Seek(offset: -100L, SeekOrigin.End);
 
                         Assert.AreEqual(600, newPosition);
-                        Assert.AreEqual(newPosition, fs.Position);
+                        Assert.AreEqual(600, fs.Position);
                     }
 
                     using (var fs = client.OpenRead(remoteFile))
@@ -4746,9 +4809,10 @@ namespace SshNetTests
                         Assert.AreEqual(writeBuffer.Length, fs.Length);
 
                         var readBuffer = new byte[writeBuffer.Length];
-                        Assert.AreEqual(writeBuffer.Length, fs.Read(readBuffer, 0, readBuffer.Length));
+                        Assert.AreEqual(writeBuffer.Length, fs.Read(readBuffer, offset: 0, readBuffer.Length));
                         Assert.IsTrue(writeBuffer.IsEqualTo(readBuffer));
 
+                        // Ensure we've reached end of the stream
                         Assert.AreEqual(-1, fs.ReadByte());
                     }
 
@@ -4758,12 +4822,12 @@ namespace SshNetTests
                     // write less bytes than buffer size
                     using (var fs = client.OpenWrite(remoteFile))
                     {
-                        fs.Write(writeBuffer, 0, writeBuffer.Length);
+                        fs.Write(writeBuffer, offset: 0, writeBuffer.Length);
 
-                        var newPosition = fs.Seek(-3, SeekOrigin.End);
+                        var newPosition = fs.Seek(offset: -3, SeekOrigin.End);
 
                         Assert.AreEqual(697, newPosition);
-                        Assert.AreEqual(newPosition, fs.Position);
+                        Assert.AreEqual(697, fs.Position);
 
                         fs.WriteByte(0x01);
                         fs.WriteByte(0x05);
@@ -4776,7 +4840,7 @@ namespace SshNetTests
                         Assert.AreEqual(writeBuffer.Length + 1, fs.Length);
 
                         var readBuffer = new byte[writeBuffer.Length - 3];
-                        Assert.AreEqual(readBuffer.Length, fs.Read(readBuffer, 0, readBuffer.Length));
+                        Assert.AreEqual(readBuffer.Length, fs.Read(readBuffer, offset: 0, readBuffer.Length));
                         Assert.IsTrue(readBuffer.SequenceEqual(writeBuffer.Take(readBuffer.Length)));
 
                         Assert.AreEqual(0x01, fs.ReadByte());
@@ -4784,23 +4848,25 @@ namespace SshNetTests
                         Assert.AreEqual(0x04, fs.ReadByte());
                         Assert.AreEqual(0x07, fs.ReadByte());
 
+                        // Ensure we've reached end of the stream
                         Assert.AreEqual(-1, fs.ReadByte());
                     }
 
                     client.DeleteFile(remoteFile);
 
-                    writeBuffer = GenerateRandom((int) client.BufferSize * 4);
+                    // buffer holding the data that we'll write to the file
+                    writeBuffer = GenerateRandom(size: (int) client.BufferSize * 4);
 
                     // seek within EOF and beyond buffer size
                     // write less bytes than buffer size
                     using (var fs = client.OpenWrite(remoteFile))
                     {
-                        fs.Write(writeBuffer, 0, writeBuffer.Length);
+                        fs.Write(writeBuffer, offset: 0, writeBuffer.Length);
 
-                        var newPosition = fs.Seek(- (client.BufferSize * 2), SeekOrigin.End);
+                        var newPosition = fs.Seek(offset: -(client.BufferSize * 2), SeekOrigin.End);
 
                         Assert.AreEqual(1000, newPosition);
-                        Assert.AreEqual(newPosition, fs.Position);
+                        Assert.AreEqual(1000, fs.Position);
 
                         fs.WriteByte(0x01);
                         fs.WriteByte(0x05);
@@ -4814,7 +4880,7 @@ namespace SshNetTests
 
                         // First part of file should not have been touched
                         var readBuffer = new byte[(int) client.BufferSize * 2];
-                        Assert.AreEqual(readBuffer.Length, fs.Read(readBuffer, 0, readBuffer.Length));
+                        Assert.AreEqual(readBuffer.Length, fs.Read(readBuffer, offset: 0, readBuffer.Length));
                         Assert.IsTrue(readBuffer.SequenceEqual(writeBuffer.Take(readBuffer.Length)));
 
                         // Check part that should have been updated
@@ -4825,9 +4891,10 @@ namespace SshNetTests
 
                         // Remaining bytes should not have been touched
                         readBuffer = new byte[((int) client.BufferSize * 2) - 4];
-                        Assert.AreEqual(readBuffer.Length, fs.Read(readBuffer, 0, readBuffer.Length));
+                        Assert.AreEqual(readBuffer.Length, fs.Read(readBuffer, offset: 0, readBuffer.Length));
                         Assert.IsTrue(readBuffer.SequenceEqual(writeBuffer.Skip(((int)client.BufferSize * 2) + 4).Take(readBuffer.Length)));
 
+                        // Ensure we've reached end of the stream
                         Assert.AreEqual(-1, fs.ReadByte());
                     }
                 }
@@ -4845,13 +4912,13 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_SftpFileStream_Seek_Issue253()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             var buf = Encoding.UTF8.GetBytes("123456");
 
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -4862,15 +4929,15 @@ namespace SshNetTests
                 {
                     using (var ws = client.OpenWrite(remoteFile))
                     {
-                        ws.Write(buf, 0, 3);
+                        ws.Write(buf, offset: 0, count: 3);
                     }
 
                     using (var ws = client.OpenWrite(remoteFile))
                     {
-                        var newPosition = ws.Seek(3, SeekOrigin.Begin);
+                        var newPosition = ws.Seek(offset: 3, SeekOrigin.Begin);
 
                         Assert.AreEqual(3, newPosition);
-                        Assert.AreEqual(newPosition, ws.Position);
+                        Assert.AreEqual(3, ws.Position);
 
                         ws.Write(buf, 3, 3);
                     }
@@ -4891,14 +4958,14 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_SftpFileStream_Seek_WithinReadBuffer()
         {
-            const string remoteFile = "/home/sshnet/test";
-
-            var originalContent = GenerateRandom(800);
+            var originalContent = GenerateRandom(size: 800);
 
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.BufferSize = 500;
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -4909,19 +4976,19 @@ namespace SshNetTests
                 {
                     using (var fs = client.OpenWrite(remoteFile))
                     {
-                        fs.Write(originalContent, 0, originalContent.Length);
+                        fs.Write(originalContent, offset: 0, originalContent.Length);
                     }
 
                     using (var fs = client.OpenRead(remoteFile))
                     {
                         var readBuffer = new byte[200];
 
-                        Assert.AreEqual(readBuffer.Length, fs.Read(readBuffer, 0, readBuffer.Length));
+                        Assert.AreEqual(readBuffer.Length, fs.Read(readBuffer, offset: 0, readBuffer.Length));
 
-                        var newPosition = fs.Seek(3L, SeekOrigin.Begin);
+                        var newPosition = fs.Seek(offset: 3L, SeekOrigin.Begin);
 
                         Assert.AreEqual(3L, newPosition);
-                        Assert.AreEqual(newPosition, fs.Position);
+                        Assert.AreEqual(3L, fs.Position);
                     }
 
                     client.DeleteFile(remoteFile);
@@ -4938,21 +5005,25 @@ namespace SshNetTests
                     {
                         Assert.AreEqual(1, fs.Length);
                         Assert.AreEqual(0x04, fs.ReadByte());
+
+                        // Ensure we've reached end of the stream
                         Assert.AreEqual(-1, fs.ReadByte());
                     }
 
                     using (var fs = client.OpenWrite(remoteFile))
                     {
-                        var newPosition = fs.Seek(700L, SeekOrigin.Begin);
+                        var newPosition = fs.Seek(offset: 700L, SeekOrigin.Begin);
 
                         Assert.AreEqual(700L, newPosition);
-                        Assert.AreEqual(newPosition, fs.Position);
+                        Assert.AreEqual(700L, fs.Position);
                     }
 
                     using (var fs = client.OpenRead(remoteFile))
                     {
                         Assert.AreEqual(1, fs.Length);
                         Assert.AreEqual(0x04, fs.ReadByte());
+
+                        // Ensure we've reached end of the stream
                         Assert.AreEqual(-1, fs.ReadByte());
                     }
 
@@ -4969,16 +5040,16 @@ namespace SshNetTests
                     }
 
                     var seekOffset = 3L;
-                    var writeBuffer = GenerateRandom(7);
+                    var writeBuffer = GenerateRandom(size: 7);
 
                     using (var fs = client.OpenWrite(remoteFile))
                     {
                         var newPosition = fs.Seek(seekOffset, SeekOrigin.Begin);
 
                         Assert.AreEqual(seekOffset, newPosition);
-                        Assert.AreEqual(newPosition, fs.Position);
+                        Assert.AreEqual(seekOffset, fs.Position);
 
-                        fs.Write(writeBuffer, 0, writeBuffer.Length);
+                        fs.Write(writeBuffer, offset: 0, writeBuffer.Length);
                     }
 
                     using (var fs = client.OpenRead(remoteFile))
@@ -4986,14 +5057,15 @@ namespace SshNetTests
                         Assert.AreEqual(seekOffset + writeBuffer.Length, fs.Length);
                         Assert.AreEqual(0x04, fs.ReadByte());
 
-                        var emptyBuffer = new byte[seekOffset - 1];
-                        Assert.AreEqual(emptyBuffer.Length, fs.Read(emptyBuffer, 0, emptyBuffer.Length));
-                        Assert.IsTrue(new byte[emptyBuffer.Length].IsEqualTo(emptyBuffer));
+                        var soughtOverReadBuffer = new byte[seekOffset - 1];
+                        Assert.AreEqual(soughtOverReadBuffer.Length, fs.Read(soughtOverReadBuffer, offset: 0, soughtOverReadBuffer.Length));
+                        Assert.IsTrue(new byte[soughtOverReadBuffer.Length].IsEqualTo(soughtOverReadBuffer));
 
                         var readBuffer = new byte[writeBuffer.Length];
-                        Assert.AreEqual(readBuffer.Length, fs.Read(readBuffer, 0, readBuffer.Length));
+                        Assert.AreEqual(readBuffer.Length, fs.Read(readBuffer, offset: 0, readBuffer.Length));
                         Assert.IsTrue(writeBuffer.IsEqualTo(readBuffer));
 
+                        // Ensure we've reached end of the stream
                         Assert.AreEqual(-1, fs.ReadByte());
                     }
 
@@ -5010,16 +5082,16 @@ namespace SshNetTests
                     }
 
                     seekOffset = 700L;
-                    writeBuffer = GenerateRandom(4);
+                    writeBuffer = GenerateRandom(size: 4);
 
                     using (var fs = client.OpenWrite(remoteFile))
                     {
                         var newPosition = fs.Seek(seekOffset, SeekOrigin.Begin);
 
                         Assert.AreEqual(seekOffset, newPosition);
-                        Assert.AreEqual(newPosition, fs.Position);
+                        Assert.AreEqual(seekOffset, fs.Position);
 
-                        fs.Write(writeBuffer, 0, writeBuffer.Length);
+                        fs.Write(writeBuffer, offset: 0, writeBuffer.Length);
                     }
 
                     using (var fs = client.OpenRead(remoteFile))
@@ -5027,14 +5099,15 @@ namespace SshNetTests
                         Assert.AreEqual(seekOffset + writeBuffer.Length, fs.Length);
                         Assert.AreEqual(0x04, fs.ReadByte());
 
-                        var emptyBuffer = new byte[seekOffset - 1];
-                        Assert.AreEqual(emptyBuffer.Length, fs.Read(emptyBuffer, 0, emptyBuffer.Length));
-                        Assert.IsTrue(new byte[emptyBuffer.Length].IsEqualTo(emptyBuffer));
+                        var soughtOverReadBufferffer = new byte[seekOffset - 1];
+                        Assert.AreEqual(soughtOverReadBufferffer.Length, fs.Read(soughtOverReadBufferffer, offset: 0, soughtOverReadBufferffer.Length));
+                        Assert.IsTrue(new byte[soughtOverReadBufferffer.Length].IsEqualTo(soughtOverReadBufferffer));
 
                         var readBuffer = new byte[writeBuffer.Length];
-                        Assert.AreEqual(readBuffer.Length, fs.Read(readBuffer, 0, readBuffer.Length));
+                        Assert.AreEqual(readBuffer.Length, fs.Read(readBuffer, offset: 0, readBuffer.Length));
                         Assert.IsTrue(writeBuffer.IsEqualTo(readBuffer));
 
+                        // Ensure we've reached end of the stream
                         Assert.AreEqual(-1, fs.ReadByte());
                     }
 
@@ -5051,16 +5124,16 @@ namespace SshNetTests
                     }
 
                     seekOffset = 3L;
-                    writeBuffer = GenerateRandom(600);
+                    writeBuffer = GenerateRandom(size: 600);
 
                     using (var fs = client.OpenWrite(remoteFile))
                     {
                         var newPosition = fs.Seek(seekOffset, SeekOrigin.Begin);
 
                         Assert.AreEqual(seekOffset, newPosition);
-                        Assert.AreEqual(newPosition, fs.Position);
+                        Assert.AreEqual(seekOffset, fs.Position);
 
-                        fs.Write(writeBuffer, 0, writeBuffer.Length);
+                        fs.Write(writeBuffer, offset: 0, writeBuffer.Length);
                     }
 
                     using (var fs = client.OpenRead(remoteFile))
@@ -5071,9 +5144,10 @@ namespace SshNetTests
                         Assert.AreEqual(0x00, fs.ReadByte());
 
                         var readBuffer = new byte[writeBuffer.Length];
-                        Assert.AreEqual(writeBuffer.Length, fs.Read(readBuffer, 0, readBuffer.Length));
+                        Assert.AreEqual(writeBuffer.Length, fs.Read(readBuffer, offset: 0, readBuffer.Length));
                         Assert.IsTrue(writeBuffer.IsEqualTo(readBuffer));
 
+                        // Ensure we've reached end of the stream
                         Assert.AreEqual(-1, fs.ReadByte());
                     }
 
@@ -5090,16 +5164,16 @@ namespace SshNetTests
                     }
 
                     seekOffset = 550L;
-                    writeBuffer = GenerateRandom(600);
+                    writeBuffer = GenerateRandom(size: 600);
 
                     using (var fs = client.OpenWrite(remoteFile))
                     {
                         var newPosition = fs.Seek(seekOffset, SeekOrigin.Begin);
 
                         Assert.AreEqual(seekOffset, newPosition);
-                        Assert.AreEqual(newPosition, fs.Position);
+                        Assert.AreEqual(seekOffset, fs.Position);
 
-                        fs.Write(writeBuffer, 0, writeBuffer.Length);
+                        fs.Write(writeBuffer, offset: 0, writeBuffer.Length);
                     }
 
                     using (var fs = client.OpenRead(remoteFile))
@@ -5108,14 +5182,15 @@ namespace SshNetTests
 
                         Assert.AreEqual(0x04, fs.ReadByte());
 
-                        var emptyBuffer = new byte[seekOffset - 1];
-                        Assert.AreEqual(seekOffset - 1, fs.Read(emptyBuffer, 0, emptyBuffer.Length));
-                        Assert.IsTrue(new byte[seekOffset - 1].IsEqualTo(emptyBuffer));
+                        var soughtOverReadBufferffer = new byte[seekOffset - 1];
+                        Assert.AreEqual(seekOffset - 1, fs.Read(soughtOverReadBufferffer, offset: 0, soughtOverReadBufferffer.Length));
+                        Assert.IsTrue(new byte[seekOffset - 1].IsEqualTo(soughtOverReadBufferffer));
 
                         var readBuffer = new byte[writeBuffer.Length];
-                        Assert.AreEqual(writeBuffer.Length, fs.Read(readBuffer, 0, readBuffer.Length));
+                        Assert.AreEqual(writeBuffer.Length, fs.Read(readBuffer, offset: 0, readBuffer.Length));
                         Assert.IsTrue(writeBuffer.IsEqualTo(readBuffer));
 
+                        // Ensure we've reached end of the stream
                         Assert.AreEqual(-1, fs.ReadByte());
                     }
 
@@ -5136,13 +5211,13 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_SftpFileStream_SetLength_FileDoesNotExist()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             var size = new Random().Next(500, 5000);
 
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -5182,20 +5257,21 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_Open_Append_Write_ExistingFile()
         {
-            const string remoteFile = "/home/sshnet/test";
             const int fileSize = 5 * 1024;
 
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             using (var input = CreateMemoryStream(fileSize))
             {
+                input.Position = 0;
+
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
                     client.DeleteFile(remoteFile);
                 }
-
-                input.Position = 0;
 
                 try
                 {
@@ -5204,8 +5280,8 @@ namespace SshNetTests
                     using (var s = client.Open(remoteFile, FileMode.Append, FileAccess.Write))
                     {
                         var buffer = new byte[] { 0x05, 0x0f, 0x0d, 0x0a, 0x04 };
-                        s.Write(buffer, 0, buffer.Length);
-                        input.Write(buffer, 0, buffer.Length);
+                        s.Write(buffer, offset: 0, buffer.Length);
+                        input.Write(buffer, offset: 0, buffer.Length);
                     }
 
                     using (var downloaded = new MemoryStream())
@@ -5230,11 +5306,11 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_Open_Append_Write_FileDoesNotExist()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -5261,11 +5337,11 @@ namespace SshNetTests
 
                     #region Verify if content is actually written to the file
 
-                    var content = GenerateRandom(100);
+                    var content = GenerateRandom(size: 100);
 
                     using (var s = client.Open(remoteFile, FileMode.Append, FileAccess.Write))
                     {
-                        s.Write(content, 0, content.Length);
+                        s.Write(content, offset: 0, content.Length);
                     }
 
                     using (var downloaded = new MemoryStream())
@@ -5292,11 +5368,11 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_Open_PathAndMode_ModeIsCreate_FileDoesNotExist()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -5323,11 +5399,11 @@ namespace SshNetTests
 
                     #region Verify if content is actually written to the file
 
-                    var content = GenerateRandom(100);
+                    var content = GenerateRandom(size: 100);
 
                     using (var s = client.Open(remoteFile, FileMode.Create))
                     {
-                        s.Write(content, 0, content.Length);
+                        s.Write(content, offset: 0, content.Length);
                     }
 
                     using (var downloaded = new MemoryStream())
@@ -5352,7 +5428,6 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_Open_PathAndMode_ModeIsCreate_ExistingFile()
         {
-            const string remoteFile = "/home/sshnet/test";
             const int fileSize = 5 * 1024;
             var newContent = new byte[] { 0x07, 0x03, 0x02, 0x0b };
 
@@ -5360,6 +5435,8 @@ namespace SshNetTests
             using (var input = CreateMemoryStream(fileSize))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -5378,7 +5455,7 @@ namespace SshNetTests
                         Assert.IsTrue(attributes.IsRegularFile);
                         Assert.AreEqual(0L, attributes.Size);
 
-                        stream.Write(newContent, 0, newContent.Length);
+                        stream.Write(newContent, offset: 0, newContent.Length);
                         stream.Position = 0;
 
                         Assert.AreEqual(CreateHash(newContent), CreateHash(stream));
@@ -5397,11 +5474,11 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_Open_PathAndModeAndAccess_ModeIsCreate_AccessIsReadWrite_FileDoesNotExist()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -5428,11 +5505,11 @@ namespace SshNetTests
 
                     #region Verify if content is actually written to the file
 
-                    var content = GenerateRandom(100);
+                    var content = GenerateRandom(size: 100);
 
                     using (var s = client.Open(remoteFile, FileMode.Create, FileAccess.ReadWrite))
                     {
-                        s.Write(content, 0, content.Length);
+                        s.Write(content, offset: 0, content.Length);
                     }
 
                     using (var downloaded = new MemoryStream())
@@ -5457,7 +5534,6 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_Open_PathAndModeAndAccess_ModeIsCreate_AccessIsReadWrite_ExistingFile()
         {
-            const string remoteFile = "/home/sshnet/test";
             const int fileSize = 5 * 1024;
             var newContent = new byte[] { 0x07, 0x03, 0x02, 0x0b };
 
@@ -5465,6 +5541,8 @@ namespace SshNetTests
             using (var input = CreateMemoryStream(fileSize))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -5483,7 +5561,7 @@ namespace SshNetTests
                         Assert.IsTrue(attributes.IsRegularFile);
                         Assert.AreEqual(0L, attributes.Size);
 
-                        stream.Write(newContent, 0, newContent.Length);
+                        stream.Write(newContent, offset: 0, newContent.Length);
                         stream.Position = 0;
 
                         Assert.AreEqual(CreateHash(newContent), CreateHash(stream));
@@ -5502,8 +5580,6 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_Open_PathAndModeAndAccess_ModeIsCreate_AccessIsWrite_ExistingFile()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             // use new content that contains less bytes than original content to
             // verify whether file is first truncated
             var originalContent = new byte[] { 0x05, 0x0f, 0x0d, 0x0a, 0x04 };
@@ -5512,6 +5588,8 @@ namespace SshNetTests
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -5524,7 +5602,7 @@ namespace SshNetTests
 
                     using (var s = client.Open(remoteFile, FileMode.Create, FileAccess.Write))
                     {
-                        s.Write(newContent, 0, newContent.Length);
+                        s.Write(newContent, offset: 0, newContent.Length);
                     }
 
                     using (var downloaded = new MemoryStream())
@@ -5548,11 +5626,11 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_Open_PathAndModeAndAccess_ModeIsCreate_AccessIsWrite_FileDoesNotExist()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -5579,11 +5657,11 @@ namespace SshNetTests
 
                     #region Verify if content is actually written to the file
 
-                    var content = GenerateRandom(100);
+                    var content = GenerateRandom(size: 100);
 
                     using (var s = client.Open(remoteFile, FileMode.Create, FileAccess.Write))
                     {
-                        s.Write(content, 0, content.Length);
+                        s.Write(content, offset: 0, content.Length);
                     }
 
                     using (var downloaded = new MemoryStream())
@@ -5608,13 +5686,14 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_Open_CreateNew_Write_ExistingFile()
         {
-            const string remoteFile = "/home/sshnet/test";
             const int fileSize = 5 * 1024;
 
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             using (var input = CreateMemoryStream(fileSize))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -5665,11 +5744,11 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_Open_CreateNew_Write_FileDoesNotExist()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -5696,11 +5775,11 @@ namespace SshNetTests
 
                     #region Verify if content is actually written to the file
 
-                    var content = GenerateRandom(100);
+                    var content = GenerateRandom(size: 100);
 
                     using (var s = client.Open(remoteFile, FileMode.CreateNew, FileAccess.Write))
                     {
-                        s.Write(content, 0, content.Length);
+                        s.Write(content, offset: 0, content.Length);
                     }
 
                     using (var downloaded = new MemoryStream())
@@ -5725,8 +5804,6 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_Open_Open_Write_ExistingFile()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             // use new content that contains less bytes than original content to
             // verify whether file is first truncated
             var originalContent = new byte[] { 0x05, 0x0f, 0x0d, 0x0a, 0x04 };
@@ -5736,6 +5813,8 @@ namespace SshNetTests
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -5748,7 +5827,7 @@ namespace SshNetTests
 
                     using (var s = client.Open(remoteFile, FileMode.Open, FileAccess.Write))
                     {
-                        s.Write(newContent, 0, newContent.Length);
+                        s.Write(newContent, offset: 0, newContent.Length);
                     }
 
                     using (var downloaded = new MemoryStream())
@@ -5772,11 +5851,11 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_Open_Open_Write_FileDoesNotExist()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -5815,8 +5894,6 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_Open_OpenOrCreate_Write_ExistingFile()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             // use new content that contains less bytes than original content to
             // verify whether file is first truncated
             var originalContent = new byte[] { 0x05, 0x0f, 0x0d, 0x0a, 0x04 };
@@ -5826,6 +5903,8 @@ namespace SshNetTests
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -5838,7 +5917,7 @@ namespace SshNetTests
 
                     using (var s = client.Open(remoteFile, FileMode.OpenOrCreate, FileAccess.Write))
                     {
-                        s.Write(newContent, 0, newContent.Length);
+                        s.Write(newContent, offset: 0, newContent.Length);
                     }
 
                     using (var downloaded = new MemoryStream())
@@ -5862,11 +5941,11 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_Open_OpenOrCreate_Write_FileDoesNotExist()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -5893,11 +5972,11 @@ namespace SshNetTests
 
                     #region Verify if content is actually written to the file
 
-                    var content = GenerateRandom(100);
+                    var content = GenerateRandom(size: 100);
 
                     using (var s = client.Open(remoteFile, FileMode.OpenOrCreate, FileAccess.Write))
                     {
-                        s.Write(content, 0, content.Length);
+                        s.Write(content, offset: 0, content.Length);
                     }
 
                     using (var downloaded = new MemoryStream())
@@ -5928,7 +6007,6 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_Open_Truncate_Write_ExistingFile()
         {
-            const string remoteFile = "/home/sshnet/test";
             const int fileSize = 5 * 1024;
 
             // use new content that contains less bytes than original content to
@@ -5940,6 +6018,8 @@ namespace SshNetTests
             using (var input = CreateMemoryStream(fileSize))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -5954,7 +6034,7 @@ namespace SshNetTests
 
                     using (var s = client.Open(remoteFile, FileMode.Truncate, FileAccess.Write))
                     {
-                        s.Write(newContent, 0, newContent.Length);
+                        s.Write(newContent, offset: 0, newContent.Length);
                     }
 
                     using (var downloaded = new MemoryStream())
@@ -5979,11 +6059,11 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_Open_Truncate_Write_FileDoesNotExist()
         {
-            const string remoteFile = "/home/sshnet/test";
-
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 if (client.Exists(remoteFile))
                 {
@@ -6018,12 +6098,13 @@ namespace SshNetTests
         [TestMethod]
         public void Sftp_OpenRead()
         {
-            const string remoteFile = "/home/sshnet/test";
             const int fileSize = 5 * 1024 * 1024;
 
             using (var client = new SftpClient(_connectionInfoFactory.Create()))
             {
                 client.Connect();
+
+                var remoteFile = GenerateUniqueRemoteFileName();
 
                 SftpCreateRemoteFile(client, remoteFile, fileSize);
 
@@ -6036,7 +6117,7 @@ namespace SshNetTests
                         var stopwatch = new Stopwatch();
                         stopwatch.Start();
 
-                        var bytesRead = s.Read(buffer, 0, buffer.Length);
+                        var bytesRead = s.Read(buffer, offset: 0, buffer.Length);
 
                         stopwatch.Stop();
 
@@ -6087,8 +6168,8 @@ namespace SshNetTests
             if (preamble.Length != 0)
             {
                 var textAndPreambleBytes = new byte[preamble.Length + textBytes.Length];
-                Buffer.BlockCopy(preamble, 0, textAndPreambleBytes, 0, preamble.Length);
-                Buffer.BlockCopy(textBytes, 0, textAndPreambleBytes, preamble.Length, textBytes.Length);
+                Buffer.BlockCopy(preamble, srcOffset: 0, textAndPreambleBytes, dstOffset: 0, preamble.Length);
+                Buffer.BlockCopy(textBytes, srcOffset: 0, textAndPreambleBytes, preamble.Length, textBytes.Length);
                 return textAndPreambleBytes;
             }
 
@@ -6144,6 +6225,11 @@ namespace SshNetTests
             sw.Flush();
             memoryStream.Position = 0;
             return memoryStream;
+        }
+
+        private static string GenerateUniqueRemoteFileName()
+        {
+            return $"/home/sshnet/{Guid.NewGuid():D}";
         }
     }
 }
