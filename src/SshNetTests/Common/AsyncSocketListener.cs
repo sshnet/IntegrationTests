@@ -87,9 +87,14 @@ namespace Renci.SshNet.Tests.Common
                 var state = new SocketStateObject(handler);
                 handler.BeginReceive(state.Buffer, 0, state.Buffer.Length, 0, ReadCallback, state);
             }
+            catch (SocketException)
+            {
+                // when the socket is closed, an SocketException is thrown since .NET 5
+                // by Socket.EndAccept(IAsyncResult)
+            }
             catch (ObjectDisposedException)
             {
-                // when the socket is closed, an ObjectDisposedException is thrown
+                // when the socket is closed, an ObjectDisposedException is thrown on old .NET Framework
                 // by Socket.EndAccept(IAsyncResult)
             }
         }

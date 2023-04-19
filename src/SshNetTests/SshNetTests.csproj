@@ -2,12 +2,12 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFrameworks>net45;netcoreapp2.1;netcoreapp3.1</TargetFrameworks>
+    <TargetFrameworks>net472;net7.0</TargetFrameworks>
     <AutoGenerateBindingRedirects>false</AutoGenerateBindingRedirects>
 	<IsTestProject>true</IsTestProject>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp2.1' or '$(TargetFramework)' == 'netcoreapp3.1' ">
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net7.0' ">
     <DefineConstants>TRACE;FEATURE_MSTEST_DATATEST;FEATURE_SOCKET_EAP;FEATURE_ENCODING_ASCII;FEATURE_THREAD_SLEEP;FEATURE_THREAD_THREADPOOL</DefineConstants>
   </PropertyGroup>
 
@@ -28,16 +28,17 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.1.0" />	  
     <PackageReference Include="MSTest.TestAdapter" Version="2.1.0" />
     <PackageReference Include="MSTest.TestFramework" Version="2.1.0" />
-    <PackageReference Include="SSH.NET" Version="2020.0.1" />
+    <PackageReference Include="SSH.NET" Version="2020.0.2" />
     <PackageReference Include="System.Management" Version="4.7.0" />
   </ItemGroup>
 
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net40' or '$(TargetFramework)' == 'net45' ">
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net40' or '$(TargetFramework)' == 'net472' ">
     <PackageReference Include="Tamir.SharpSSH" Version="1.1.1.13" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\SSH.NET-TestTools\src\SshNet.TestTools.OpenSSH\SshNet.TestTools.OpenSSH.csproj" />
+    <!-- <ProjectReference Include="..\..\..\SSH.NET\src\Renci.SshNet\Renci.SshNet.csproj" /> -->
   </ItemGroup>
 
   <ItemGroup>
