@@ -32,7 +32,7 @@
     <PackageReference Include="System.Management" Version="4.7.0" />
   </ItemGroup>
 
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net40' or '$(TargetFramework)' == 'net472' ">
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net472' ">
     <PackageReference Include="Tamir.SharpSSH" Version="1.1.1.13" />
   </ItemGroup>
 
